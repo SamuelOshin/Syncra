@@ -1,6 +1,6 @@
 FROM node:20-alpine AS builder
 # Install build dependencies for better-sqlite3 compilation
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 py3-setuptools make g++
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
