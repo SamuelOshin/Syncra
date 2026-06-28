@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Syncra - Enterprise Real-Time Translation</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- CSS Style -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- App Container -->
+  <div id="app">
+    
+    <!-- 1. AUTH SCREEN (Login / Signup) -->
+    <div id="auth-screen" class="screen active">
+      <div class="glass-card auth-card">
+        <div class="logo-area">
+          <div class="logo-icon">
+            <i data-lucide="aperture"></i>
+          </div>
+          <h1>Syncra</h1>
+          <p class="subtitle">Enterprise Real-Time Translation Platform</p>
+        </div>
+
+        <!-- Auth Tabs -->
+        <div class="auth-tabs">
+          <button id="tab-signin" class="auth-tab active">Sign In</button>
+          <button id="tab-signup" class="auth-tab">Sign Up</button>
+        </div>
+        
+        <!-- Sign In Form -->
+        <form id="signin-form" class="auth-form active">
+          <div class="input-group">
+            <label for="signin-email">Email Address</label>
+            <div class="input-wrapper">
+              <i data-lucide="mail"></i>
+              <input type="email" id="signin-email" placeholder="you@company.com" required autocomplete="email">
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="signin-password">Password</label>
+            <div class="input-wrapper">
+              <i data-lucide="lock"></i>
+              <input type="password" id="signin-password" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">
+            <span>Sign In</span>
+            <i data-lucide="log-in"></i>
+          </button>
+        </form>
+
+        <!-- Sign Up Form -->
+        <form id="signup-form" class="auth-form">
+          <div class="input-group">
+            <label for="signup-name">Full Name</label>
+            <div class="input-wrapper">
+              <i data-lucide="user"></i>
+              <input type="text" id="signup-name" placeholder="John Doe" required autocomplete="name">
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="signup-email">Email Address</label>
+            <div class="input-wrapper">
+              <i data-lucide="mail"></i>
+              <input type="email" id="signup-email" placeholder="you@company.com" required autocomplete="email">
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="signup-password">Password</label>
+            <div class="input-wrapper">
+              <i data-lucide="lock"></i>
+              <input type="password" id="signup-password" placeholder="At least 8 characters" required autocomplete="new-password">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">
+            <span>Create Account</span>
+            <i data-lucide="user-plus"></i>
+          </button>
+        </form>
+
+        <div class="divider">
+          <span>or continue with</span>
+        </div>
+
+        <!-- SSO Buttons -->
+        <div class="sso-buttons">
+          <a href="/api/auth/google" class="btn btn-secondary btn-sso">
+            <i data-lucide="chrome"></i>
+            <span>Google</span>
+          </a>
+          <a href="/api/auth/microsoft" class="btn btn-secondary btn-sso">
+            <i data-lucide="terminal"></i>
+            <span>Microsoft</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. GUEST ENTRY SCREEN (For direct room links) -->
+    <div id="entry-screen" class="screen">
+      <div class="glass-card entry-card">
+        <div class="logo-area">
+          <div class="logo-icon">
+            <i data-lucide="aperture"></i>
+          </div>
+          <h1>Syncra</h1>
+          <p class="subtitle">Join as Guest Observer</p>
+        </div>
+        
+        <form id="join-form">
+          <div class="input-group">
+            <label for="room-input">Room Name</label>
+            <div class="input-wrapper">
+              <i data-lucide="hash"></i>
+              <input type="text" id="room-input" placeholder="e.g. benin-sync" required autocomplete="off" readonly>
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label for="name-input">Your Name</label>
+            <div class="input-wrapper">
+              <i data-lucide="user"></i>
+              <input type="text" id="name-input" placeholder="e.g. Guest Observer" required autocomplete="off">
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label for="lang-input">I Speak / Je parle</label>
+            <div class="input-wrapper">
+              <i data-lucide="volume-2"></i>
+              <select id="lang-input" required>
+                <option value="en" selected>English</option>
+                <option value="fr">Français (French)</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="ja">日本語 (Japanese)</option>
+              </select>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn btn-primary btn-block">
+            <span>Join Meeting</span>
+            <i data-lucide="arrow-right"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 3. SYNCRA HUB (Dashboard) -->
+    <div id="dashboard-screen" class="screen">
+      <div class="dashboard-container">
+        
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar">
+          <div class="sidebar-brand">
+            <i data-lucide="aperture"></i>
+            <div class="brand-meta">
+              <span class="brand-name">Syncra</span>
+              <span class="brand-version">ENTERPRISE V2.4</span>
+            </div>
+          </div>
+          
+          <div class="sidebar-action">
+            <button id="btn-sidebar-schedule" class="btn btn-primary btn-block">
+              <i data-lucide="plus"></i>
+              <span>New Project</span>
+            </button>
+          </div>
+          
+          <nav class="sidebar-menu">
+            <a href="#" class="menu-item active" id="btn-sidebar-dashboard">
+              <i data-lucide="layout-dashboard"></i>
+              <span>Dashboard</span>
+              <span class="active-indicator"></span>
+            </a>
+            <a href="#" class="menu-item" id="btn-sidebar-calendar">
+              <i data-lucide="calendar"></i>
+              <span>Calendar</span>
+            </a>
+            <a href="#" class="menu-item" id="btn-sidebar-projects">
+              <i data-lucide="folder"></i>
+              <span>Projects</span>
+            </a>
+            <a href="#" class="menu-item" id="btn-sidebar-tm">
+              <i data-lucide="database"></i>
+              <span>Translation Memory</span>
+            </a>
+            <a href="#" class="menu-item" id="btn-sidebar-glossary">
+              <i data-lucide="book-open"></i>
+              <span>Glossary</span>
+            </a>
+            <a href="#" class="menu-item" id="btn-sidebar-analytics">
+              <i data-lucide="bar-chart-2"></i>
+              <span>Analytics</span>
+            </a>
+          </nav>
+          
+          <div class="sidebar-footer">
+            <a href="#" class="menu-item" id="btn-sidebar-settings">
+              <i data-lucide="settings"></i>
+              <span>Settings</span>
+            </a>
+            <a href="#" class="menu-item">
+              <i data-lucide="help-circle"></i>
+              <span>Support</span>
+            </a>
+          </div>
+        </aside>
+        
+        <!-- Main Content Area -->
+        <main class="main-content">
+          
+          <!-- Global Top Header -->
+          <header class="main-header">
+            <div class="search-bar-header">
+              <i data-lucide="search"></i>
+              <input type="text" id="global-search" placeholder="Search rooms, transcripts, memory..." autocomplete="off">
+              <!-- Search Results Dropdown -->
+              <div id="search-results-dropdown" class="search-results-dropdown"></div>
+            </div>
+            
+            <div class="header-actions">
+              <div class="notification-wrapper" style="position: relative; display: flex; align-items: center;">
+                <button class="btn-header-action" id="btn-notifications" aria-label="Notifications">
+                  <i data-lucide="bell"></i>
+                  <span class="notification-dot" id="notification-badge" style="display: none;"></span>
+                </button>
+                <!-- Notifications Dropdown -->
+                <div id="notifications-dropdown" class="notifications-dropdown">
+                  <div class="dropdown-header">
+                    <h4>Notifications</h4>
+                    <button id="btn-clear-notifications" class="btn-link">Clear All</button>
+                  </div>
+                  <div class="dropdown-body" id="notifications-list">
+                    <div class="empty-state">No new notifications</div>
+                  </div>
+                </div>
+              </div>
+              
+              <button class="btn-header-action" aria-label="History">
+                <i data-lucide="history"></i>
+              </button>
+              
+              <div class="header-profile">
+                <div class="user-avatar" id="user-avatar">U</div>
+                <div class="profile-info-compact">
+                  <span id="profile-name" class="profile-name-text">Loading...</span>
+                  <span id="profile-email" class="profile-email-text">loading...</span>
+                </div>
+                <button id="btn-logout" class="btn-header-action btn-logout" aria-label="Log Out">
+                  <i data-lucide="log-out"></i>
+                </button>
+              </div>
+            </div>
+          </header>
+          
+          <!-- Main Body Content -->
+          <div class="main-body">
+            
+            <!-- 1. DASHBOARD VIEW -->
+            <div id="view-dashboard" class="content-view active">
+              <!-- Welcome Banner -->
+              <div class="welcome-banner">
+                <h2>Welcome back, <span id="welcome-name">User</span></h2>
+                <p>Here's your translation workspace overview for today.</p>
+              </div>
+              
+              <!-- Asymmetric Grid -->
+              <div class="dashboard-grid">
+                
+                <!-- Left Column: Quick Actions -->
+                <div class="grid-left">
+                  <div id="btn-instant-meet" class="action-card clickable-card">
+                    <div class="card-icon icon-blue">
+                      <i data-lucide="video"></i>
+                    </div>
+                    <div class="card-content">
+                      <h3>Start Instant Meeting</h3>
+                      <p>Launch a real-time translated room immediately.</p>
+                    </div>
+                    <div class="card-arrow">
+                      <i data-lucide="arrow-right"></i>
+                    </div>
+                  </div>
+                  
+                  <div id="btn-open-schedule" class="action-card clickable-card">
+                    <div class="card-icon icon-green">
+                      <i data-lucide="calendar"></i>
+                    </div>
+                    <div class="card-content">
+                      <h3>Schedule Meeting</h3>
+                      <p>Set up a future room with pre-assigned languages.</p>
+                    </div>
+                    <div class="card-arrow">
+                      <i data-lucide="arrow-right"></i>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Right Column: Upcoming Meetings -->
+                <div class="grid-right">
+                  <div class="dashboard-card upcoming-card">
+                    <div class="card-header">
+                      <h3>Upcoming Meetings</h3>
+                      <a href="#" class="btn-link" id="btn-view-calendar">VIEW ALL CALENDAR</a>
+                    </div>
+                    <div id="upcoming-list" class="workspace-list active">
+                      <!-- Dynamic Content -->
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+              
+              <!-- Vault Section -->
+              <div class="vault-section">
+                <div class="dashboard-card vault-card">
+                  <div class="card-header">
+                    <h3>
+                      <i data-lucide="archive" class="header-icon"></i>
+                      <span>Transcript Vault</span>
+                    </h3>
+                    <div class="vault-actions">
+                      <div class="search-input-wrapper" style="position: relative; display: flex; align-items: center; margin-right: 8px;">
+                        <i data-lucide="search" style="position: absolute; left: 10px; width: 14px; height: 14px; color: var(--text-muted); pointer-events: none;"></i>
+                        <input type="text" id="vault-search" placeholder="Search transcripts..." style="padding: 6px 12px 6px 30px; border-radius: 8px; border: 1px solid var(--border-subtle); font-size: 0.82rem; outline: none; background: var(--bg-secondary); width: 160px; transition: width 0.2s;" onfocus="this.style.width='220px'" onblur="if(!this.value) this.style.width='160px'">
+                      </div>
+                      <button class="btn-icon-secondary" id="btn-download-all" title="Download All Transcripts">
+                        <i data-lucide="download"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div id="vault-list" class="workspace-list active">
+                    <!-- Dynamic Table Content -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. PROJECTS VIEW -->
+            <div id="view-projects" class="content-view">
+              <div class="glass-card" style="padding: 24px;">
+                <div class="modal-header" style="padding: 0 0 20px 0; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px;">
+                  <div>
+                    <h3><i data-lucide="folder"></i> Projects Grouping</h3>
+                    <p class="subtitle">Organize your translation rooms and terminology glossary under custom projects</p>
+                  </div>
+                </div>
+                <div class="project-split">
+                  <!-- Left Column: Create Project Form -->
+                  <div class="project-form-side">
+                    <h4>Create New Project</h4>
+                    <form id="project-form" style="margin-top: 12px;">
+                      <div class="input-group">
+                        <label for="project-name">Project Name</label>
+                        <div class="input-wrapper">
+                          <i data-lucide="type"></i>
+                          <input type="text" id="project-name" placeholder="e.g. Q2 Reviews" required autocomplete="off">
+                        </div>
+                      </div>
+                      <div class="input-group">
+                        <label for="project-desc">Description (Optional)</label>
+                        <div class="input-wrapper">
+                          <i data-lucide="align-left"></i>
+                          <textarea id="project-desc" placeholder="Describe the purpose of this project..." style="width: 100%; border-radius: 8px; border: 1px solid var(--border-subtle); padding: 10px 12px; font-family: var(--font-body); font-size: 0.88rem; outline: none; resize: vertical; min-height: 80px;"></textarea>
+                        </div>
+                      </div>
+                      <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
+                        <span>Create Project</span>
+                        <i data-lucide="plus"></i>
+                      </button>
+                    </form>
+                  </div>
+
+                  <!-- Right Column: Projects List -->
+                  <div class="project-list-side">
+                    <h4>Existing Projects</h4>
+                    <div id="projects-items-list" class="projects-list-container" style="margin-top: 12px; max-height: 450px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+                      <!-- Populated dynamically -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. TRANSLATION MEMORY VIEW -->
+            <div id="view-tm" class="content-view">
+              <div class="glass-card" style="padding: 24px;">
+                <div class="modal-header" style="padding: 0 0 20px 0; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px;">
+                  <div>
+                    <h3><i data-lucide="database"></i> Translation Memory</h3>
+                    <p class="subtitle">Cached translation segments reused automatically to speed up translations</p>
+                  </div>
+                </div>
+                <div class="search-bar" style="margin-bottom: 20px;">
+                  <i data-lucide="search"></i>
+                  <input type="text" id="tm-search" placeholder="Search cached segments..." autocomplete="off">
+                </div>
+                <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+                  <table class="vault-table tm-table">
+                    <thead>
+                      <tr>
+                        <th>SOURCE TEXT</th>
+                        <th>TRANSLATION</th>
+                        <th>LANGUAGES</th>
+                        <th style="text-align: right;">ACTION</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tm-items-list">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. GLOSSARY VIEW -->
+            <div id="view-glossary" class="content-view">
+              <div class="glass-card" style="padding: 24px;">
+                <div class="modal-header" style="padding: 0 0 20px 0; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px;">
+                  <div>
+                    <h3><i data-lucide="book-open"></i> Terminology Glossary</h3>
+                    <p class="subtitle">Enforce specific translations for local phrases or terminology</p>
+                  </div>
+                </div>
+                <!-- Add Term Form -->
+                <form id="glossary-form" class="glossary-add-form" style="margin-bottom: 24px; padding: 20px; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 12px;">
+                  <div class="glossary-form-grid">
+                    <div class="input-group-compact">
+                      <label for="glossary-source">Source Term</label>
+                      <input type="text" id="glossary-source" placeholder="e.g. bosseur" required autocomplete="off">
+                    </div>
+                    <div class="input-group-compact">
+                      <label for="glossary-target">Translation</label>
+                      <input type="text" id="glossary-target" placeholder="e.g. hard worker" required autocomplete="off">
+                    </div>
+                    <div class="input-group-compact">
+                      <label for="glossary-source-lang">From</label>
+                      <select id="glossary-source-lang" required>
+                        <option value="en">English</option>
+                        <option value="fr" selected>French</option>
+                        <option value="es">Spanish</option>
+                        <option value="de">German</option>
+                        <option value="ja">Japanese</option>
+                      </select>
+                    </div>
+                    <div class="input-group-compact">
+                      <label for="glossary-target-lang">To</label>
+                      <select id="glossary-target-lang" required>
+                        <option value="en" selected>English</option>
+                        <option value="fr">French</option>
+                        <option value="es">Spanish</option>
+                        <option value="de">German</option>
+                        <option value="ja">Japanese</option>
+                      </select>
+                    </div>
+                    <div class="input-group-compact">
+                      <label for="glossary-project">Project</label>
+                      <select id="glossary-project">
+                        <option value="">Global (All)</option>
+                        <!-- Populated dynamically -->
+                      </select>
+                    </div>
+                    <div class="glossary-form-action">
+                      <button type="submit" class="btn btn-primary btn-sm btn-block">
+                        <i data-lucide="plus"></i>
+                        <span>Add Term</span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+                <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+                  <table class="vault-table glossary-table">
+                    <thead>
+                      <tr>
+                        <th>SOURCE TERM</th>
+                        <th>TRANSLATION</th>
+                        <th>LANGUAGES</th>
+                        <th style="text-align: right;">ACTION</th>
+                      </tr>
+                    </thead>
+                    <tbody id="glossary-items-list">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. ANALYTICS VIEW -->
+            <div id="view-analytics" class="content-view">
+              <div class="glass-card" style="padding: 24px;">
+                <div class="modal-header" style="padding: 0 0 20px 0; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px;">
+                  <div>
+                    <h3><i data-lucide="bar-chart-2"></i> Analytics Dashboard</h3>
+                    <p class="subtitle">Monitor translation volumes, speeds, and activity metrics</p>
+                  </div>
+                </div>
+                <!-- KPI Cards Grid -->
+                <div class="analytics-kpi-grid">
+                  <div class="kpi-card">
+                    <div class="kpi-icon-wrapper info">
+                      <i data-lucide="video"></i>
+                    </div>
+                    <div class="kpi-content">
+                      <span class="kpi-label">Meetings Hosted</span>
+                      <h4 id="stat-meetings" class="kpi-value">0</h4>
+                    </div>
+                  </div>
+
+                  <div class="kpi-card">
+                    <div class="kpi-icon-wrapper success">
+                      <i data-lucide="languages"></i>
+                    </div>
+                    <div class="kpi-content">
+                      <span class="kpi-label">Words Translated</span>
+                      <h4 id="stat-words" class="kpi-value">0</h4>
+                    </div>
+                  </div>
+
+                  <div class="kpi-card">
+                    <div class="kpi-icon-wrapper warning">
+                      <i data-lucide="zap"></i>
+                    </div>
+                    <div class="kpi-content">
+                      <span class="kpi-label">Avg Latency</span>
+                      <h4 id="stat-latency" class="kpi-value">0.00s</h4>
+                    </div>
+                  </div>
+
+                  <div class="kpi-card">
+                    <div class="kpi-icon-wrapper primary">
+                      <i data-lucide="database"></i>
+                    </div>
+                    <div class="kpi-content">
+                      <span class="kpi-label">Saved Terms</span>
+                      <h4 id="stat-saved" class="kpi-value">0</h4>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Chart Panel -->
+                <div class="analytics-chart-panel" style="margin-top: 32px; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px;">
+                  <h4 style="font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 16px;">Translation Volume (Last 7 Days)</h4>
+                  <div style="position: relative; height: 260px; width: 100%;">
+                    <canvas id="analytics-chart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. CALENDAR VIEW -->
+            <div id="view-calendar" class="content-view">
+              <div class="glass-card" style="padding: 24px;">
+                <div class="modal-header" style="padding: 0 0 20px 0; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div>
+                      <h3><i data-lucide="calendar"></i> Meeting Schedule & History</h3>
+                      <p class="subtitle">View all your scheduled, active, and past translation calls</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="btn-calendar-schedule">
+                      <i data-lucide="plus"></i>
+                      <span>Schedule Call</span>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                  <table class="vault-table">
+                    <thead>
+                      <tr>
+                        <th>MEETING TITLE</th>
+                        <th>DATE & TIME</th>
+                        <th>ROOM CODE</th>
+                        <th>STATUS</th>
+                        <th style="text-align: right;">ACTION</th>
+                      </tr>
+                    </thead>
+                    <tbody id="calendar-meetings-list">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Footer -->
+          <footer class="main-footer">
+            <span class="copyright">© 2026 Syncra Enterprise. All rights reserved.</span>
+            <div class="footer-links">
+              <a href="#">Privacy Policy</a>
+              <a href="#">Terms of Service</a>
+              <a href="#">API Docs</a>
+              <a href="#">Status</a>
+            </div>
+          </footer>
+          
+        </main>
+        
+      </div>
+    </div>
+    
+    <!-- 4. CALL SCREEN -->
+    <div id="call-screen" class="screen">
+      <!-- Top Header -->
+      <header class="call-header">
+        <div class="room-info">
+          <span class="status-dot connected"></span>
+          <span id="room-title" class="room-name">#room</span>
+        </div>
+        <div class="translation-mode">
+          <span id="user-lang-badge" class="badge">EN</span>
+          <i data-lucide="arrow-right-left"></i>
+          <span id="target-lang-badge" class="badge active">FR</span>
+        </div>
+      </header>
+      
+      <!-- Main Content Area -->
+      <main class="call-main">
+        <!-- Video Grid -->
+        <div class="video-grid">
+          <!-- Remote Videos Grid -->
+          <div id="remote-videos-container">
+            <div class="video-placeholder" id="p2p-placeholder">
+              <i data-lucide="video-off"></i>
+              <span id="remote-name">Waiting for participants to join...</span>
+            </div>
+          </div>
+          
+          <!-- Local Video (Small/Floating) -->
+          <div class="video-container local" id="local-video-container">
+            <video id="local-video" autoplay muted playsinline></video>
+            <div class="video-overlay">
+              <span>You</span>
+            </div>
+            <div class="voice-indicator" id="local-voice-indicator"></div>
+          </div>
+        </div>
+        
+        <!-- Captions Panel -->
+        <div class="captions-panel">
+          <div class="panel-header">
+            <h3><i data-lucide="message-square-quote"></i> Live Translation</h3>
+            <span id="speech-status" class="speech-status idle">Listening...</span>
+          </div>
+          
+          <div id="caption-stream" class="caption-stream">
+            <div class="welcome-caption">
+              <p class="translated">Welcome to Syncra. Speak naturally—captions and translations will appear here in real-time.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+      
+      <!-- Controls Footer -->
+      <footer class="call-controls">
+        <button id="btn-mute" class="ctrl-btn" aria-label="Mute Microphone">
+          <i data-lucide="mic"></i>
+        </button>
+        <button id="btn-camera" class="ctrl-btn" aria-label="Toggle Camera">
+          <i data-lucide="video"></i>
+        </button>
+        <button id="btn-export-transcript" class="ctrl-btn" aria-label="Export Transcript">
+          <i data-lucide="download"></i>
+        </button>
+        <button id="btn-leave" class="ctrl-btn ctrl-btn-danger" aria-label="Leave Call">
+          <i data-lucide="phone-off"></i>
+        </button>
+      </footer>
+    </div>
+
+    <!-- 5. MEETING ENDED SCREEN -->
+    <div id="ended-screen" class="screen">
+      <div class="glass-card entry-card">
+        <div class="logo-area">
+          <div class="logo-icon" style="background: var(--danger); box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);">
+            <i data-lucide="phone-off"></i>
+          </div>
+          <h1>Meeting Ended</h1>
+          <p class="subtitle">This translation call has been completed by the host.</p>
+        </div>
+        <button id="btn-ended-home" class="btn btn-primary btn-block">
+          <span>Go to Dashboard</span>
+          <i data-lucide="home"></i>
+        </button>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- 5. SCHEDULE MEETING MODAL -->
+  <div id="schedule-modal" class="modal-overlay">
+    <div class="glass-card modal-card">
+      <div class="modal-header">
+        <h3><i data-lucide="calendar"></i> Schedule Translation Call</h3>
+        <button id="btn-close-schedule" class="btn-close"><i data-lucide="x"></i></button>
+      </div>
+      <form id="schedule-form">
+        <div class="input-group">
+          <label for="schedule-title">Meeting Title</label>
+          <div class="input-wrapper">
+            <i data-lucide="type"></i>
+            <input type="text" id="schedule-title" placeholder="e.g. Q2 Syncra Review" required autocomplete="off">
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="schedule-date">Date & Time</label>
+          <div class="input-wrapper">
+            <i data-lucide="clock"></i>
+            <input type="datetime-local" id="schedule-date" required>
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="schedule-project">Assign to Project (Optional)</label>
+          <div class="input-wrapper">
+            <i data-lucide="folder"></i>
+            <select id="schedule-project">
+              <option value="">No Project (Global)</option>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="btn-cancel-schedule" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. TRANSCRIPT VAULT MODAL -->
+  <div id="transcript-modal" class="modal-overlay">
+    <div class="glass-card modal-card modal-large">
+      <div class="modal-header">
+        <div>
+          <h3 id="transcript-modal-title">Meeting Transcript</h3>
+          <p id="transcript-modal-subtitle" class="subtitle">Bilingual log</p>
+        </div>
+        <button id="btn-close-transcript" class="btn-close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="search-bar">
+          <i data-lucide="search"></i>
+          <input type="text" id="transcript-search" placeholder="Search transcript dialogues..." autocomplete="off">
+        </div>
+        <div id="transcript-dialogues" class="transcript-stream">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals converted to inline content views -->
+
+  <!-- 6.6. APPLICATION SETTINGS MODAL -->
+  <div id="settings-modal" class="modal-overlay">
+    <div class="glass-card modal-card">
+      <div class="modal-header">
+        <div>
+          <h3><i data-lucide="settings"></i> Application Settings</h3>
+          <p class="subtitle">Manage your media devices and language preferences</p>
+        </div>
+        <button id="btn-close-settings" class="btn-close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        
+        <form id="settings-form">
+          <!-- Video Device -->
+          <div class="input-group">
+            <label for="settings-camera">Camera</label>
+            <div class="input-wrapper">
+              <i data-lucide="video"></i>
+              <select id="settings-camera" required>
+                <option value="">Loading cameras...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Audio Device -->
+          <div class="input-group">
+            <label for="settings-mic">Microphone</label>
+            <div class="input-wrapper">
+              <i data-lucide="mic"></i>
+              <select id="settings-mic" required>
+                <option value="">Loading microphones...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Default Speaking Language -->
+          <div class="input-group">
+            <label for="settings-default-lang">Default Speaking Language</label>
+            <div class="input-wrapper">
+              <i data-lucide="languages"></i>
+              <select id="settings-default-lang" required>
+                <option value="en">English</option>
+                <option value="fr">Français (French)</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="ja">日本語 (Japanese)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Default Translation Language -->
+          <div class="input-group">
+            <label for="settings-default-target-lang">Default Translation Language</label>
+            <div class="input-wrapper">
+              <i data-lucide="arrow-right-left"></i>
+              <select id="settings-default-target-lang" required>
+                <option value="en">English</option>
+                <option value="fr">Français (French)</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="ja">日本語 (Japanese)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-actions" style="margin-top: 32px;">
+            <button type="button" id="btn-cancel-settings" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+          </div>
+        </form>
+        
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. CUSTOM CONFIRMATION MODAL -->
+  <div id="confirm-modal" class="modal-overlay">
+    <div class="glass-card modal-card">
+      <div class="modal-header">
+        <h3 id="confirm-modal-title">Confirm Action</h3>
+        <button id="btn-close-confirm" class="btn-close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body" style="height: auto; min-height: unset; padding: 8px 0;">
+        <p id="confirm-modal-message" style="line-height: 1.5; color: var(--text-main);">Are you sure you want to proceed?</p>
+      </div>
+      <div class="modal-actions" style="margin-top: 24px;">
+        <button id="btn-cancel-confirm" class="btn btn-secondary">Cancel</button>
+        <button id="btn-action-confirm" class="btn btn-primary">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Socket.io & App Logic -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

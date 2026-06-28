@@ -1,0 +1,300 @@
+// ==========================================
+// SYNCRA LIVEKIT MEDIA ENGINE
+// ==========================================
+
+import { api } from '../api.js';
+import { ui } from '../ui.js';
+
+export const LiveKitEngine = {
+  room: null,
+  isMuted: false,
+  isCameraOff: false,
+
+  async connect(roomId, username, socket) {
+    console.log('[LiveKitEngine] Initializing LiveKit Connection...');
+    
+    // 1. Ensure LiveKit SDK is loaded
+    try {
+      await this.ensureSdkLoaded();
+    } catch (err) {
+      console.error('[LiveKitEngine] Failed to load LiveKit Client SDK:', err);
+      ui.showToast('Failed to load LiveKit media library', 'error');
+      throw err;
+    }
+
+    // 2. Fetch LiveKit Token from backend
+    let token, url;
+    try {
+      const response = await api.getLiveKitToken(roomId);
+      token = response.data.token;
+      url = response.data.url;
+    } catch (err) {
+      console.error('[LiveKitEngine] Error fetching LiveKit token:', err);
+      ui.showToast('Failed to get meeting room token', 'error');
+      throw err;
+    }
+
+    const { Room, RoomEvent, Track } = window.LiveKitClient;
+
+    // 3. Configure the LiveKit Room
+    this.room = new Room({
+      adaptiveStream: true,
+      dynacast: true,
+      publishDefaults: {
+        simulcast: true,
+      }
+    });
+
+    // 4. Setup event listeners for remote participants
+    this.room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+      console.log(`[LiveKitEngine] Track subscribed from ${participant.identity}:`, track.kind);
+      if (track.kind === Track.Kind.Video) {
+        this.createOrUpdateRemoteVideo(participant, track);
+      } else if (track.kind === Track.Kind.Audio) {
+        this.attachRemoteAudio(participant, track);
+      }
+    });
+
+    this.room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+      console.log(`[LiveKitEngine] Track unsubscribed from ${participant.identity}:`, track.kind);
+      if (track.kind === Track.Kind.Video) {
+        this.removeRemoteVideo(participant);
+      }
+    });
+
+    this.room.on(RoomEvent.ParticipantDisconnected, (participant) => {
+      console.log(`[LiveKitEngine] Participant disconnected: ${participant.identity}`);
+      this.removeRemoteVideo(participant);
+    });
+
+    // 5. Connect to the room and publish local tracks
+    try {
+      await this.room.connect(url, token);
+      console.log(`[LiveKitEngine] Connected to room: ${roomId} as ${username}`);
+
+      const cameraDeviceId = localStorage.getItem('syncra_preferred_camera_id');
+      const micDeviceId = localStorage.getItem('syncra_preferred_mic_id');
+
+      // Enable local tracks with saved constraints
+      await this.room.localParticipant.enableCameraAndMicrophone({
+        video: cameraDeviceId ? { deviceId: { exact: cameraDeviceId } } : true,
+        audio: micDeviceId ? { deviceId: { exact: micDeviceId } } : true
+      });
+
+      // Attach local video to UI
+      const localVideo = document.getElementById('local-video');
+      if (localVideo) {
+        const videoTrack = this.room.localParticipant.getTrack(Track.Source.Camera);
+        if (videoTrack && videoTrack.track) {
+          videoTrack.track.attach(localVideo);
+        }
+      }
+
+      // Attach local audio visualizer
+      const localVoiceIndicator = document.getElementById('local-voice-indicator');
+      if (localVoiceIndicator) {
+        const audioTrack = this.room.localParticipant.getTrack(Track.Source.Microphone);
+        if (audioTrack && audioTrack.track && audioTrack.track.mediaStreamTrack) {
+          const stream = new MediaStream([audioTrack.track.mediaStreamTrack]);
+          this.setupAudioVisualizer(stream, localVoiceIndicator);
+        }
+      }
+
+    } catch (err) {
+      console.error('[LiveKitEngine] Error connecting to LiveKit room:', err);
+      ui.showToast('Failed to connect to media server', 'error');
+      this.cleanup();
+      throw err;
+    }
+  },
+
+  ensureSdkLoaded() {
+    if (window.LiveKitClient) return Promise.resolve();
+    
+    return new Promise((resolve, reject) => {
+      console.log('[LiveKitEngine] Loading LiveKit Client SDK from CDN...');
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js';
+      script.async = true;
+      script.onload = () => {
+        console.log('[LiveKitEngine] LiveKit Client SDK loaded successfully.');
+        resolve();
+      };
+      script.onerror = () => reject(new Error('Failed to load LiveKit Client SDK'));
+      document.head.appendChild(script);
+    });
+  },
+
+  createOrUpdateRemoteVideo(participant, track) {
+    const container = document.getElementById('remote-videos-container');
+    if (!container) return;
+
+    const peerId = participant.sid;
+    let videoCard = document.getElementById(`peer-card-${peerId}`);
+    
+    if (!videoCard) {
+      videoCard = document.createElement('div');
+      videoCard.id = `peer-card-${peerId}`;
+      videoCard.className = 'video-card';
+
+      videoCard.innerHTML = `
+        <div class="video-wrapper">
+          <video id="peer-video-${peerId}" autoplay playsinline></video>
+          <div class="voice-indicator" id="peer-voice-${peerId}"></div>
+        </div>
+        <div class="participant-tag">
+          <span id="peer-name-${peerId}">${ui.escapeHtml(participant.identity)}</span>
+        </div>
+      `;
+      container.appendChild(videoCard);
+    }
+
+    const videoEl = document.getElementById(`peer-video-${peerId}`);
+    if (videoEl) {
+      track.attach(videoEl);
+    }
+  },
+
+  attachRemoteAudio(participant, track) {
+    const peerId = participant.sid;
+    
+    // Create an audio element if it doesn't exist
+    let audioEl = document.getElementById(`peer-audio-${peerId}`);
+    if (!audioEl) {
+      audioEl = document.createElement('audio');
+      audioEl.id = `peer-audio-${peerId}`;
+      audioEl.autoplay = true;
+      document.body.appendChild(audioEl);
+    }
+
+    track.attach(audioEl);
+
+    // Bind audio visualizer to remote participant's tag
+    const voiceIndicator = document.getElementById(`peer-voice-${peerId}`);
+    if (voiceIndicator && track.mediaStreamTrack) {
+      const stream = new MediaStream([track.mediaStreamTrack]);
+      this.setupAudioVisualizer(stream, voiceIndicator);
+    }
+  },
+
+  removeRemoteVideo(participant) {
+    const peerId = participant.sid;
+    const card = document.getElementById(`peer-card-${peerId}`);
+    if (card) card.remove();
+
+    const audioEl = document.getElementById(`peer-audio-${peerId}`);
+    if (audioEl) audioEl.remove();
+  },
+
+  toggleMute(isMuted) {
+    this.isMuted = isMuted;
+    if (this.room && this.room.localParticipant) {
+      this.room.localParticipant.setMicrophoneEnabled(!isMuted);
+    }
+  },
+
+  toggleCamera(isCameraOff) {
+    this.isCameraOff = isCameraOff;
+    if (this.room && this.room.localParticipant) {
+      this.room.localParticipant.setCameraEnabled(!isCameraOff);
+    }
+    const localVideo = document.getElementById('local-video');
+    if (localVideo) {
+      localVideo.style.opacity = isCameraOff ? '0.3' : '1';
+    }
+  },
+
+  async switchDevice(type, deviceId) {
+    if (!this.room || !this.room.localParticipant) return;
+    const { Track } = window.LiveKitClient;
+
+    try {
+      if (type === 'video') {
+        await this.room.localParticipant.setCameraEnabled(false);
+        await this.room.localParticipant.setCameraEnabled(true, { deviceId });
+        
+        // Re-attach to local video element
+        const localVideo = document.getElementById('local-video');
+        if (localVideo) {
+          const cameraTrack = this.room.localParticipant.getTrack(Track.Source.Camera);
+          if (cameraTrack && cameraTrack.track) {
+            cameraTrack.track.attach(localVideo);
+          }
+        }
+      } else {
+        await this.room.localParticipant.setMicrophoneEnabled(false);
+        await this.room.localParticipant.setMicrophoneEnabled(true, { deviceId });
+
+        // Re-attach local audio visualizer
+        const localVoiceIndicator = document.getElementById('local-voice-indicator');
+        if (localVoiceIndicator) {
+          const audioTrack = this.room.localParticipant.getTrack(Track.Source.Microphone);
+          if (audioTrack && audioTrack.track && audioTrack.track.mediaStreamTrack) {
+            const stream = new MediaStream([audioTrack.track.mediaStreamTrack]);
+            this.setupAudioVisualizer(stream, localVoiceIndicator);
+          }
+        }
+      }
+      console.log(`[LiveKitEngine] Switched ${type} device to ${deviceId}`);
+    } catch (err) {
+      console.error(`[LiveKitEngine] Error switching ${type} device:`, err);
+      throw err;
+    }
+  },
+
+  cleanup() {
+    if (this.room) {
+      try {
+        this.room.disconnect();
+      } catch (e) {}
+      this.room = null;
+    }
+
+    const localVideo = document.getElementById('local-video');
+    if (localVideo) localVideo.srcObject = null;
+
+    const container = document.getElementById('remote-videos-container');
+    if (container) container.innerHTML = '';
+  },
+
+  setupAudioVisualizer(stream, indicatorElement) {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      
+      analyser.fftSize = 256;
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      
+      source.connect(analyser);
+
+      const checkVolume = () => {
+        if (!this.room) return; // Stop visualizer loop if disconnected
+        if (!stream.active) return;
+        
+        analyser.getByteFrequencyData(dataArray);
+        let values = 0;
+        
+        for (let i = 0; i < bufferLength; i++) {
+          values += dataArray[i];
+        }
+        
+        const average = values / bufferLength;
+        
+        if (average > 12) {
+          indicatorElement.classList.add('speaking');
+        } else {
+          indicatorElement.classList.remove('speaking');
+        }
+        
+        requestAnimationFrame(checkVolume);
+      };
+
+      checkVolume();
+    } catch (err) {
+      console.warn('[LiveKitEngine] Audio Visualizer failed to start:', err);
+    }
+  }
+};
+export default LiveKitEngine;
