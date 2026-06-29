@@ -2133,6 +2133,117 @@ body, html {
   .vault-table .col-action {
     justify-content: flex-end !important;
   }
+
+  /* Call Screen Layout on Mobile - Floating Glassmorphic Overlay for Captions */
+  .call-main {
+    flex-direction: column !important;
+    position: relative !important;
+    height: calc(100vh - 140px) !important;
+  }
+
+  .video-grid {
+    flex: 1 !important;
+    height: 100% !important;
+    width: 100% !important;
+  }
+
+  .captions-panel {
+    position: absolute !important;
+    bottom: 16px !important;
+    left: 16px !important;
+    right: 16px !important;
+    height: 140px !important;
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 16px !important;
+    z-index: 10 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    box-shadow: var(--shadow-elevation-high) !important;
+  }
+
+  .panel-header {
+    padding: 8px 16px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: transparent !important;
+  }
+
+  .panel-header h3 {
+    color: #FFFFFF !important;
+    font-size: 0.8rem !important;
+  }
+
+  .panel-header h3 svg {
+    color: #FFFFFF !important;
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .speech-status {
+    font-size: 0.65rem !important;
+    padding: 2px 8px !important;
+  }
+
+  .caption-stream {
+    padding: 10px 16px !important;
+    gap: 8px !important;
+  }
+
+  .caption-card {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .caption-card.me {
+    border-left: 3px solid var(--primary) !important;
+  }
+
+  .caption-card.them {
+    border-left: 3px solid var(--success) !important;
+  }
+
+  .caption-card .speaker-name {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+  }
+
+  .caption-card .latency-badge {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 0.65rem !important;
+  }
+
+  .caption-card .original {
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 0.78rem !important;
+    font-style: italic !important;
+    margin-top: 2px !important;
+  }
+
+  .caption-card .translated {
+    color: #FFFFFF !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    margin-top: 2px !important;
+  }
+
+  .welcome-caption {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  .welcome-caption .translated {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: 0.78rem !important;
+    line-height: 1.4 !important;
+  }
 }
 
 /* Tablet & Desktop Layouts for Call Screen */
