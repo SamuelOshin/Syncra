@@ -1974,17 +1974,7 @@ body, html {
 
   /* Dashboard Mobile Footer fixes */
   .main-footer {
-    flex-direction: column !important;
-    height: auto !important;
-    padding: 20px 16px 84px 16px !important;
-    gap: 12px !important;
-    justify-content: center !important;
-  }
-
-  .footer-links {
-    flex-wrap: wrap !important;
-    justify-content: center !important;
-    gap: 12px !important;
+    display: none !important;
   }
 
   .main-content {
