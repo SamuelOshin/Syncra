@@ -11,6 +11,10 @@ class Config {
   public readonly modelName: string;
   public readonly databaseUrl: string | undefined;
   public readonly sessionSecret: string;
+  public readonly jwtAccessSecret: string;
+  public readonly jwtRefreshSecret: string;
+  public readonly jwtAccessExpiresIn: string;
+  public readonly jwtRefreshExpiresIn: string;
   public readonly livekitUrl: string;
   public readonly livekitApiKey: string;
   public readonly livekitApiSecret: string;
@@ -35,6 +39,22 @@ class Config {
       throw new Error("FATAL: SESSION_SECRET is required in production mode.");
     }
     this.sessionSecret = secret || 'syncra-local-development-secret-key';
+
+    // JWT Configuration
+    const accessSecret = process.env.JWT_ACCESS_SECRET;
+    if (!accessSecret && process.env.NODE_ENV === 'production') {
+      throw new Error("FATAL: JWT_ACCESS_SECRET is required in production mode.");
+    }
+    this.jwtAccessSecret = accessSecret || 'syncra-local-jwt-access-secret-key-12345';
+
+    const refreshSecret = process.env.JWT_REFRESH_SECRET;
+    if (!refreshSecret && process.env.NODE_ENV === 'production') {
+      throw new Error("FATAL: JWT_REFRESH_SECRET is required in production mode.");
+    }
+    this.jwtRefreshSecret = refreshSecret || 'syncra-local-jwt-refresh-secret-key-67890';
+
+    this.jwtAccessExpiresIn = process.env.JWT_ACCESS_EXPIRES_IN || '15m';
+    this.jwtRefreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 
     this.livekitUrl = process.env.LIVEKIT_URL || '';
     this.livekitApiKey = process.env.LIVEKIT_API_KEY || '';

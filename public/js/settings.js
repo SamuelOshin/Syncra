@@ -2,60 +2,174 @@
 // SYNCRA SETTINGS CONTROLLER MODULE
 // ==========================================
 
+import { api } from './api.js';
 import { ui } from './ui.js';
 import { webrtc } from './webrtc.js';
 
-const settingsModal = document.getElementById('settings-modal');
-const btnSidebarSettings = document.getElementById('btn-sidebar-settings');
-const btnCloseSettings = document.getElementById('btn-close-settings');
-const btnCancelSettings = document.getElementById('btn-cancel-settings');
-const settingsForm = document.getElementById('settings-form');
-
-const cameraSelect = document.getElementById('settings-camera');
-const micSelect = document.getElementById('settings-mic');
-const defaultLangSelect = document.getElementById('settings-default-lang');
-const defaultTargetLangSelect = document.getElementById('settings-default-target-lang');
-
 export const settings = {
+  previewStream: null,
+
   init() {
-    if (btnSidebarSettings) {
-      btnSidebarSettings.addEventListener('click', (e) => {
+    // 1. Tab Navigation Logic
+    const tabButtons = document.querySelectorAll('.settings-tab-btn');
+    const panes = document.querySelectorAll('.settings-pane');
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-target');
+        
+        // Stop camera preview if leaving the Devices tab
+        if (targetId !== 'settings-pane-devices') {
+          this.stopCameraPreview();
+        }
+
+        // Toggle active tab button
+        tabButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Toggle active pane
+        panes.forEach(pane => {
+          if (pane.id === targetId) {
+            pane.classList.add('active');
+          } else {
+            pane.classList.remove('active');
+          }
+        });
+
+        // Start camera preview if entering the Devices tab
+        if (targetId === 'settings-pane-devices') {
+          this.startCameraPreview();
+        }
+      });
+    });
+
+    // 2. Profile Update Form
+    const profileForm = document.getElementById('profile-update-form');
+    if (profileForm) {
+      profileForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        ui.toggleModal(settingsModal, true);
-        this.loadDevices();
-        this.loadSavedPreferences();
+        await this.updateProfile();
       });
     }
 
-    const closeActions = [btnCloseSettings, btnCancelSettings];
-    closeActions.forEach(btn => {
-      if (btn) {
-        btn.addEventListener('click', () => {
-          ui.toggleModal(settingsModal, false);
-        });
-      }
-    });
-
-    if (settingsForm) {
-      settingsForm.addEventListener('submit', (e) => {
+    // 3. Preferences Update Form
+    const preferencesForm = document.getElementById('preferences-update-form');
+    if (preferencesForm) {
+      preferencesForm.addEventListener('submit', (e) => {
         e.preventDefault();
         this.savePreferences();
       });
     }
 
-    // Apply default languages to Guest Entry screen on load
-    this.applyLanguageDefaultsToEntryScreen();
+    // 4. Devices Update Form
+    const devicesForm = document.getElementById('devices-update-form');
+    if (devicesForm) {
+      devicesForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveDeviceSelection();
+      });
+    }
+
+    // 5. Security (Password) Update Form
+    const securityForm = document.getElementById('security-update-form');
+    if (securityForm) {
+      securityForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await this.updatePassword();
+      });
+    }
+
+    // 6. Revoke All Sessions Button
+    const btnRevokeAll = document.getElementById('btn-security-revoke-all');
+    if (btnRevokeAll) {
+      btnRevokeAll.addEventListener('click', async () => {
+        if (confirm('Are you sure you want to revoke all active sessions? You will be logged out of all devices, including this one.')) {
+          try {
+            await api.signOut();
+            ui.showToast('All sessions revoked. Logging out...', 'success');
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
+          } catch (err) {
+            console.error('Revocation error:', err);
+            ui.showToast('Failed to revoke sessions. Please try again.', 'error');
+          }
+        }
+      });
+    }
+
+    // Expose stop camera preview globally so app.js can call it on navigation
+    window.syncraStopCameraPreview = () => this.stopCameraPreview();
+  },
+
+  async show() {
+    // 1. Populate Profile details
+    try {
+      const payload = await api.getMe();
+      const user = payload.data.user;
+
+      const nameInput = document.getElementById('profile-name-input');
+      const emailInput = document.getElementById('profile-email-input');
+      const avatarPreview = document.getElementById('settings-avatar-preview');
+      const securityTab = document.getElementById('settings-tab-security');
+
+      if (nameInput) nameInput.value = user.name;
+      if (emailInput) emailInput.value = user.email;
+      if (avatarPreview) avatarPreview.textContent = user.name.charAt(0).toUpperCase();
+
+      // Check if OAuth user (e.g. sandbox or oauth without local password management)
+      const isOAuth = user.email.endsWith('-sandbox.com');
+      if (isOAuth) {
+        if (emailInput) emailInput.readOnly = true;
+        // Hide security tab since they don't have a local password
+        if (securityTab) securityTab.style.display = 'none';
+      } else {
+        if (emailInput) emailInput.readOnly = false;
+        if (securityTab) securityTab.style.display = 'flex';
+      }
+
+      // 2. Load saved preferences
+      this.loadSavedPreferences();
+      this.loadDevices();
+
+      // Ensure Profile tab is active when entering settings
+      const firstTab = document.querySelector('.settings-tab-btn[data-target="settings-pane-profile"]');
+      if (firstTab) firstTab.click();
+
+    } catch (err) {
+      console.error('Error loading settings view:', err);
+      ui.showToast('Failed to load profile details', 'error');
+    }
+  },
+
+  loadSavedPreferences() {
+    const defaultLang = localStorage.getItem('syncra_default_lang') || 'en';
+    const defaultTargetLang = localStorage.getItem('syncra_default_target_lang') || 'fr';
+    const notifyMeetings = localStorage.getItem('syncra_notify_meetings') !== 'false';
+    const notifyGlossary = localStorage.getItem('syncra_notify_glossary') !== 'false';
+
+    const defaultLangSelect = document.getElementById('settings-default-lang');
+    const defaultTargetLangSelect = document.getElementById('settings-default-target-lang');
+    const notifyMeetingsCheck = document.getElementById('settings-notify-meetings');
+    const notifyGlossaryCheck = document.getElementById('settings-notify-glossary');
+
+    if (defaultLangSelect) defaultLangSelect.value = defaultLang;
+    if (defaultTargetLangSelect) defaultTargetLangSelect.value = defaultTargetLang;
+    if (notifyMeetingsCheck) notifyMeetingsCheck.checked = notifyMeetings;
+    if (notifyGlossaryCheck) notifyGlossaryCheck.checked = notifyGlossary;
   },
 
   async loadDevices() {
+    const cameraSelect = document.getElementById('settings-camera');
+    const micSelect = document.getElementById('settings-mic');
     if (!cameraSelect || !micSelect) return;
 
     cameraSelect.innerHTML = '<option value="">Loading cameras...</option>';
     micSelect.innerHTML = '<option value="">Loading microphones...</option>';
 
     try {
-      // Prompt for temporary permission to enumerate devices (best practice)
-      await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      // Prompt for temporary permission to enumerate devices
+      await navigator.mediaDevices.getUserMedia({ audio: true, video: true }).catch(() => {});
       
       const devices = await navigator.mediaDevices.enumerateDevices();
       
@@ -70,7 +184,7 @@ export const settings = {
         `<option value="${m.deviceId}">${ui.escapeHtml(m.label || `Microphone ${micSelect.options.length}`)}</option>`
       ).join('') || '<option value="">No microphones found</option>';
 
-      // Re-select saved devices after populating options
+      // Re-select saved devices
       const savedCamera = localStorage.getItem('syncra_preferred_camera_id');
       const savedMic = localStorage.getItem('syncra_preferred_mic_id');
 
@@ -81,44 +195,86 @@ export const settings = {
         micSelect.value = savedMic;
       }
     } catch (err) {
-      console.error('Error enumerating media devices:', err);
+      console.error('Error enumerating devices:', err);
       cameraSelect.innerHTML = '<option value="">Permission denied / Error</option>';
       micSelect.innerHTML = '<option value="">Permission denied / Error</option>';
     }
   },
 
-  loadSavedPreferences() {
-    const defaultLang = localStorage.getItem('syncra_default_lang') || 'en';
-    const defaultTargetLang = localStorage.getItem('syncra_default_target_lang') || 'fr';
+  async updateProfile() {
+    const nameInput = document.getElementById('profile-name-input');
+    const emailInput = document.getElementById('profile-email-input');
+    if (!nameInput || !emailInput) return;
 
-    if (defaultLangSelect) defaultLangSelect.value = defaultLang;
-    if (defaultTargetLangSelect) defaultTargetLangSelect.value = defaultTargetLang;
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+
+    try {
+      const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email }),
+      });
+
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.message || 'Failed to update profile');
+
+      ui.showToast('Profile updated successfully!', 'success');
+      
+      // Update Header UI
+      const profileName = document.getElementById('profile-name');
+      const profileEmail = document.getElementById('profile-email');
+      const welcomeName = document.getElementById('welcome-name');
+      const userAvatar = document.getElementById('user-avatar');
+      const dropdownUserAvatar = document.getElementById('dropdown-user-avatar');
+      const avatarPreview = document.getElementById('settings-avatar-preview');
+
+      if (profileName) profileName.textContent = name;
+      if (profileEmail) profileEmail.textContent = email;
+      if (welcomeName) welcomeName.textContent = name;
+      if (userAvatar) userAvatar.textContent = name.charAt(0).toUpperCase();
+      if (dropdownUserAvatar) dropdownUserAvatar.textContent = name.charAt(0).toUpperCase();
+      if (avatarPreview) avatarPreview.textContent = name.charAt(0).toUpperCase();
+
+    } catch (err) {
+      console.error('Profile update error:', err);
+      ui.showToast(err.message, 'error');
+    }
   },
 
-  async savePreferences() {
-    if (!cameraSelect || !micSelect || !defaultLangSelect || !defaultTargetLangSelect) return;
+  savePreferences() {
+    const defaultLangSelect = document.getElementById('settings-default-lang');
+    const defaultTargetLangSelect = document.getElementById('settings-default-target-lang');
+    const notifyMeetingsCheck = document.getElementById('settings-notify-meetings');
+    const notifyGlossaryCheck = document.getElementById('settings-notify-glossary');
+
+    if (!defaultLangSelect || !defaultTargetLangSelect) return;
+
+    localStorage.setItem('syncra_default_lang', defaultLangSelect.value);
+    localStorage.setItem('syncra_default_target_lang', defaultTargetLangSelect.value);
+    localStorage.setItem('syncra_notify_meetings', notifyMeetingsCheck ? String(notifyMeetingsCheck.checked) : 'true');
+    localStorage.setItem('syncra_notify_glossary', notifyGlossaryCheck ? String(notifyGlossaryCheck.checked) : 'true');
+
+    ui.showToast('Preferences saved successfully!', 'success');
+  },
+
+  async saveDeviceSelection() {
+    const cameraSelect = document.getElementById('settings-camera');
+    const micSelect = document.getElementById('settings-mic');
+    if (!cameraSelect || !micSelect) return;
 
     const newCameraId = cameraSelect.value;
     const newMicId = micSelect.value;
-    const defaultLang = defaultLangSelect.value;
-    const defaultTargetLang = defaultTargetLangSelect.value;
 
     const oldCameraId = localStorage.getItem('syncra_preferred_camera_id');
     const oldMicId = localStorage.getItem('syncra_preferred_mic_id');
 
-    // Store in localStorage
     localStorage.setItem('syncra_preferred_camera_id', newCameraId);
     localStorage.setItem('syncra_preferred_mic_id', newMicId);
-    localStorage.setItem('syncra_default_lang', defaultLang);
-    localStorage.setItem('syncra_default_target_lang', defaultTargetLang);
 
-    ui.toggleModal(settingsModal, false);
-    ui.showToast('Settings saved successfully!', 'success');
+    ui.showToast('Device preferences saved!', 'success');
 
-    // Apply language defaults to entry screen immediately
-    this.applyLanguageDefaultsToEntryScreen();
-
-    // Hot-swap WebRTC devices if in an active call!
+    // Hot-swap WebRTC devices if in an active call
     if (webrtc.localStream) {
       try {
         if (newCameraId && newCameraId !== oldCameraId) {
@@ -132,13 +288,88 @@ export const settings = {
         ui.showToast('Failed to hot-swap active call devices', 'error');
       }
     }
+
+    // Refresh preview with new camera selection
+    this.startCameraPreview();
   },
 
-  applyLanguageDefaultsToEntryScreen() {
-    const defaultLang = localStorage.getItem('syncra_default_lang');
-    const langInput = document.getElementById('lang-input');
-    if (langInput && defaultLang) {
-      langInput.value = defaultLang;
+  async updatePassword() {
+    const currentPasswordInput = document.getElementById('security-current-password');
+    const newPasswordInput = document.getElementById('security-new-password');
+    if (!currentPasswordInput || !newPasswordInput) return;
+
+    const currentPassword = currentPasswordInput.value;
+    const newPassword = newPasswordInput.value;
+
+    try {
+      const res = await fetch('/api/auth/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.message || 'Failed to update password');
+
+      ui.showToast('Password updated successfully!', 'success');
+      currentPasswordInput.value = '';
+      newPasswordInput.value = '';
+    } catch (err) {
+      console.error('Password update error:', err);
+      ui.showToast(err.message, 'error');
+    }
+  },
+
+  async startCameraPreview() {
+    this.stopCameraPreview();
+
+    const videoPreview = document.getElementById('settings-video-preview');
+    const placeholder = document.getElementById('settings-video-placeholder');
+    const cameraSelect = document.getElementById('settings-camera');
+
+    if (!videoPreview) return;
+
+    const cameraId = cameraSelect?.value || localStorage.getItem('syncra_preferred_camera_id');
+
+    try {
+      const constraints = {
+        video: cameraId ? { deviceId: { exact: cameraId } } : true,
+        audio: false,
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      this.previewStream = stream;
+      videoPreview.srcObject = stream;
+      videoPreview.style.display = 'block';
+      if (placeholder) placeholder.style.display = 'none';
+    } catch (err) {
+      console.warn('Could not start webcam preview:', err);
+      if (videoPreview) videoPreview.style.display = 'none';
+      if (placeholder) {
+        placeholder.style.display = 'flex';
+        const span = placeholder.querySelector('span');
+        if (span) span.textContent = 'Camera is blocked or unavailable';
+      }
+    }
+  },
+
+  stopCameraPreview() {
+    const videoPreview = document.getElementById('settings-video-preview');
+    const placeholder = document.getElementById('settings-video-placeholder');
+
+    if (this.previewStream) {
+      this.previewStream.getTracks().forEach(track => track.stop());
+      this.previewStream = null;
+    }
+
+    if (videoPreview) {
+      videoPreview.srcObject = null;
+      videoPreview.style.display = 'none';
+    }
+    if (placeholder) {
+      placeholder.style.display = 'flex';
+      const span = placeholder.querySelector('span');
+      if (span) span.textContent = 'Webcam preview is currently inactive';
     }
   }
 };

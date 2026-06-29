@@ -11,7 +11,7 @@ const glossaryRepository = new GlossaryRepository();
 export class GlossaryController {
   async getTerms(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.session.user!.id;
+      const userId = req.user!.id;
       const pagination = parsePagination(req.query);
       const { items: terms, total } = await glossaryRepository.findByUserIdPaginated(userId, pagination);
 
@@ -27,7 +27,7 @@ export class GlossaryController {
   async createTerm(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { sourceText, targetText, sourceLang, targetLang, projectId } = req.body;
-      const userId = req.session.user!.id;
+      const userId = req.user!.id;
       const id = randomUUID();
 
       const newTerm = await glossaryRepository.create({
@@ -60,7 +60,7 @@ export class GlossaryController {
   async deleteTerm(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
-      const userId = req.session.user!.id;
+      const userId = req.user!.id;
 
       const term = await glossaryRepository.findById(id);
       if (!term) {

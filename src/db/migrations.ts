@@ -16,6 +16,7 @@ export async function initializeDatabase() {
           name VARCHAR(100) NOT NULL,
           email VARCHAR(150) UNIQUE NOT NULL,
           password VARCHAR(255) NOT NULL,
+          token_version INT DEFAULT 1 NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
       `);
@@ -94,6 +95,7 @@ export async function initializeDatabase() {
       await dbClient.execute(sql`ALTER TABLE glossary ADD COLUMN IF NOT EXISTS project_id VARCHAR(36);`);
       await dbClient.execute(sql`ALTER TABLE translation_memory ADD COLUMN IF NOT EXISTS project_id VARCHAR(36);`);
       await dbClient.execute(sql`ALTER TABLE meeting_transcripts ADD COLUMN IF NOT EXISTS latency VARCHAR(10);`);
+      await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INT DEFAULT 1 NOT NULL;`);
 
       // Table for connect-pg-simple session store (safe, self-contained creation)
       await dbClient.execute(sql`
@@ -122,6 +124,7 @@ export async function initializeDatabase() {
           name TEXT NOT NULL,
           email TEXT UNIQUE NOT NULL,
           password TEXT NOT NULL,
+          token_version INTEGER DEFAULT 1 NOT NULL,
           created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
 
@@ -189,6 +192,7 @@ export async function initializeDatabase() {
       try { sqliteDb.exec(`ALTER TABLE glossary ADD COLUMN project_id TEXT;`); } catch (e) {}
       try { sqliteDb.exec(`ALTER TABLE translation_memory ADD COLUMN project_id TEXT;`); } catch (e) {}
       try { sqliteDb.exec(`ALTER TABLE meeting_transcripts ADD COLUMN latency TEXT;`); } catch (e) {}
+      try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1 NOT NULL;`); } catch (e) {}
 
       sqliteDb.exec(`
         CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);

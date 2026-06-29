@@ -51,10 +51,10 @@ export const calendar = {
     if (meetings.length === 0) {
       listBody.innerHTML = `
         <tr>
-          <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 32px;">
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-              <i data-lucide="calendar" style="width: 24px; height: 24px; color: var(--text-muted);"></i>
-              <span>No meetings scheduled. Click "Schedule Call" to create one.</span>
+          <td colspan="5">
+            <div class="list-empty">
+              <i data-lucide="calendar"></i>
+              <p>No meetings scheduled. Click "Schedule Call" to create one.</p>
             </div>
           </td>
         </tr>

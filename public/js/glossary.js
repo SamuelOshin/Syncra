@@ -42,11 +42,15 @@ export const glossary = {
     if (terms.length === 0) {
       glossaryItemsList.innerHTML = `
         <tr>
-          <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">
-            No glossary terms defined. Add one above to enforce custom translations.
+          <td colspan="4">
+            <div class="list-empty">
+              <i data-lucide="book-open"></i>
+              <p>No glossary terms defined. Add one above to enforce custom translations.</p>
+            </div>
           </td>
         </tr>
       `;
+      if (window.lucide) window.lucide.createIcons();
       return;
     }
 

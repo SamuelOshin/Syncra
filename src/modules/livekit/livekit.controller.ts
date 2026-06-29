@@ -10,7 +10,7 @@ export class LiveKitController {
   async getToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { room } = req.query;
-      const username = req.session.user!.name;
+      const username = req.user!.name;
 
       if (!room || typeof room !== 'string') {
         next(new BadRequestError('Room name is required', 'ROOM_NAME_REQUIRED'));

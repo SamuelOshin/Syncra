@@ -16,7 +16,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
       duration_ms: parseFloat(durationMs),
       ip: req.ip || req.socket.remoteAddress,
       user_agent: req.headers['user-agent'],
-      user_id: req.session?.user?.id || undefined,
+      user_id: req.user?.id || undefined,
     });
   });
 

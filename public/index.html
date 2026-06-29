@@ -21,8 +21,34 @@
   <!-- App Container -->
   <div id="app">
     
+    <!-- 0. SPLASH / LOADING SCREEN -->
+    <div id="splash-screen" class="screen active">
+      <div class="splash-container">
+        <div class="splash-logo">
+          <div class="logo-icon animate-pulse" id="splash-logo-icon">
+            <i data-lucide="aperture"></i>
+          </div>
+          <h1 class="splash-title">Syncra</h1>
+          <p class="splash-subtitle" id="splash-status">Securing connection & loading workspace...</p>
+        </div>
+        
+        <!-- Loading Bar -->
+        <div class="splash-loader" id="splash-loader">
+          <div class="loader-bar"></div>
+        </div>
+
+        <!-- Network Error State (Hidden by default) -->
+        <div class="splash-error hidden" id="splash-error">
+          <button class="btn btn-secondary" id="btn-splash-retry">
+            <i data-lucide="refresh-cw"></i>
+            <span>Retry Connection</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    
     <!-- 1. AUTH SCREEN (Login / Signup) -->
-    <div id="auth-screen" class="screen active">
+    <div id="auth-screen" class="screen">
       <div class="glass-card auth-card">
         <div class="logo-area">
           <div class="logo-icon">
@@ -619,6 +645,224 @@
                 </div>
               </div>
             </div>
+
+            <!-- 7. SETTINGS VIEW -->
+            <div id="view-settings" class="content-view">
+              <div class="glass-card settings-card">
+                <div class="settings-layout">
+                  
+                  <!-- Left Sidebar: Settings Navigation -->
+                  <div class="settings-sidebar">
+                    <button class="settings-tab-btn active" data-target="settings-pane-profile">
+                      <i data-lucide="user"></i>
+                      <span>Profile</span>
+                    </button>
+                    <button class="settings-tab-btn" data-target="settings-pane-preferences">
+                      <i data-lucide="sliders"></i>
+                      <span>Preferences</span>
+                    </button>
+                    <button class="settings-tab-btn" data-target="settings-pane-devices">
+                      <i data-lucide="video"></i>
+                      <span>Devices & Media</span>
+                    </button>
+                    <button class="settings-tab-btn" id="settings-tab-security" data-target="settings-pane-security">
+                      <i data-lucide="lock"></i>
+                      <span>Security</span>
+                    </button>
+                  </div>
+
+                  <!-- Right Side: Panes -->
+                  <div class="settings-content">
+                    
+                    <!-- Pane 1: Profile -->
+                    <div class="settings-pane active" id="settings-pane-profile">
+                      <div class="pane-header">
+                        <h4>Profile Settings</h4>
+                        <p class="subtitle">Update your personal identity details</p>
+                      </div>
+                      <form id="profile-update-form">
+                        <div class="avatar-edit-section">
+                          <div class="avatar-large" id="settings-avatar-preview">S</div>
+                          <div class="avatar-meta">
+                            <span class="avatar-label">Account Avatar</span>
+                            <span class="avatar-hint">Generated from your name's initials</span>
+                          </div>
+                        </div>
+                        
+                        <div class="input-group">
+                          <label for="profile-name-input">Full Name</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="user"></i>
+                            <input type="text" id="profile-name-input" placeholder="Your name" required autocomplete="name">
+                          </div>
+                        </div>
+
+                        <div class="input-group">
+                          <label for="profile-email-input">Email Address</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="mail"></i>
+                            <input type="email" id="profile-email-input" placeholder="you@company.com" required autocomplete="email">
+                          </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" id="btn-save-profile">
+                          <i data-lucide="save"></i>
+                          <span>Save Changes</span>
+                        </button>
+                      </form>
+                    </div>
+
+                    <!-- Pane 2: Preferences -->
+                    <div class="settings-pane" id="settings-pane-preferences">
+                      <div class="pane-header">
+                        <h4>Application Preferences</h4>
+                        <p class="subtitle">Customize default options and user preferences</p>
+                      </div>
+                      <form id="preferences-update-form">
+                        <div class="input-group">
+                          <label for="settings-default-lang">Default Speaking Language</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="languages"></i>
+                            <select id="settings-default-lang" required>
+                              <option value="en">English</option>
+                              <option value="fr">Français (French)</option>
+                              <option value="es">Español (Spanish)</option>
+                              <option value="de">Deutsch (German)</option>
+                              <option value="ja">日本語 (Japanese)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="input-group">
+                          <label for="settings-default-target-lang">Default Translation Language</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="arrow-right-left"></i>
+                            <select id="settings-default-target-lang" required>
+                              <option value="en">English</option>
+                              <option value="fr">Français (French)</option>
+                              <option value="es">Español (Spanish)</option>
+                              <option value="de">Deutsch (German)</option>
+                              <option value="ja">日本語 (Japanese)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="checkbox-group">
+                          <label class="checkbox-label">
+                            <input type="checkbox" id="settings-notify-meetings" checked>
+                            <span>Enable meeting reminder notifications</span>
+                          </label>
+                        </div>
+
+                        <div class="checkbox-group">
+                          <label class="checkbox-label">
+                            <input type="checkbox" id="settings-notify-glossary" checked>
+                            <span>Enable glossary updates notifications</span>
+                          </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                          <i data-lucide="save"></i>
+                          <span>Save Preferences</span>
+                        </button>
+                      </form>
+                    </div>
+
+                    <!-- Pane 3: Devices & Media -->
+                    <div class="settings-pane" id="settings-pane-devices">
+                      <div class="pane-header">
+                        <h4>Media Devices</h4>
+                        <p class="subtitle">Select and preview your audio and video inputs</p>
+                      </div>
+                      <form id="devices-update-form">
+                        <div class="input-group">
+                          <label for="settings-camera">Camera</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="video"></i>
+                            <select id="settings-camera" required>
+                              <option value="">Loading cameras...</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="input-group">
+                          <label for="settings-mic">Microphone</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="mic"></i>
+                            <select id="settings-mic" required>
+                              <option value="">Loading microphones...</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <!-- Camera Live Preview Box -->
+                        <div class="device-preview-section">
+                          <span class="preview-label">Camera Live Preview</span>
+                          <div class="video-preview-container">
+                            <video id="settings-video-preview" autoplay muted playsinline></video>
+                            <div class="video-preview-placeholder" id="settings-video-placeholder">
+                              <i data-lucide="video-off"></i>
+                              <span>Webcam preview is currently inactive</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                          <i data-lucide="save"></i>
+                          <span>Save Device Selection</span>
+                        </button>
+                      </form>
+                    </div>
+
+                    <!-- Pane 4: Security -->
+                    <div class="settings-pane" id="settings-pane-security">
+                      <div class="pane-header">
+                        <h4>Security & Sessions</h4>
+                        <p class="subtitle">Manage your account credentials and login sessions</p>
+                      </div>
+                      
+                      <!-- Password Update Form -->
+                      <form id="security-update-form">
+                        <div class="input-group">
+                          <label for="security-current-password">Current Password</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="lock"></i>
+                            <input type="password" id="security-current-password" placeholder="••••••••" required autocomplete="current-password">
+                          </div>
+                        </div>
+
+                        <div class="input-group">
+                          <label for="security-new-password">New Password</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="key-round"></i>
+                            <input type="password" id="security-new-password" placeholder="At least 8 characters" required autocomplete="new-password">
+                          </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" id="btn-save-password">
+                          <i data-lucide="shield-check"></i>
+                          <span>Update Password</span>
+                        </button>
+                      </form>
+                      
+                      <div class="divider" style="margin: 32px 0 24px 0;"></div>
+                      
+                      <!-- Global Logout Session Revocation -->
+                      <div class="security-danger-zone">
+                        <h5>Danger Zone</h5>
+                        <p class="subtitle">Revoke all active sessions and log out of all other devices</p>
+                        <button type="button" class="btn btn-danger" id="btn-security-revoke-all">
+                          <i data-lucide="log-out"></i>
+                          <span>Revoke All Other Sessions</span>
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+              </div>
+            </div>
             
           </div>
           
@@ -668,6 +912,9 @@
           <!-- Local Video (Small/Floating) -->
           <div class="video-container local" id="local-video-container">
             <video id="local-video" autoplay muted playsinline></video>
+            <div class="video-avatar-placeholder" id="local-avatar-placeholder">
+              <div class="video-avatar-circle" id="local-avatar-circle">Y</div>
+            </div>
             <div class="video-overlay">
               <span>You</span>
             </div>
@@ -789,81 +1036,6 @@
   </div>
 
   <!-- Modals converted to inline content views -->
-
-  <!-- 6.6. APPLICATION SETTINGS MODAL -->
-  <div id="settings-modal" class="modal-overlay">
-    <div class="glass-card modal-card">
-      <div class="modal-header">
-        <div>
-          <h3><i data-lucide="settings"></i> Application Settings</h3>
-          <p class="subtitle">Manage your media devices and language preferences</p>
-        </div>
-        <button id="btn-close-settings" class="btn-close"><i data-lucide="x"></i></button>
-      </div>
-      <div class="modal-body">
-        
-        <form id="settings-form">
-          <!-- Video Device -->
-          <div class="input-group">
-            <label for="settings-camera">Camera</label>
-            <div class="input-wrapper">
-              <i data-lucide="video"></i>
-              <select id="settings-camera" required>
-                <option value="">Loading cameras...</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Audio Device -->
-          <div class="input-group">
-            <label for="settings-mic">Microphone</label>
-            <div class="input-wrapper">
-              <i data-lucide="mic"></i>
-              <select id="settings-mic" required>
-                <option value="">Loading microphones...</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Default Speaking Language -->
-          <div class="input-group">
-            <label for="settings-default-lang">Default Speaking Language</label>
-            <div class="input-wrapper">
-              <i data-lucide="languages"></i>
-              <select id="settings-default-lang" required>
-                <option value="en">English</option>
-                <option value="fr">Français (French)</option>
-                <option value="es">Español (Spanish)</option>
-                <option value="de">Deutsch (German)</option>
-                <option value="ja">日本語 (Japanese)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Default Translation Language -->
-          <div class="input-group">
-            <label for="settings-default-target-lang">Default Translation Language</label>
-            <div class="input-wrapper">
-              <i data-lucide="arrow-right-left"></i>
-              <select id="settings-default-target-lang" required>
-                <option value="en">English</option>
-                <option value="fr">Français (French)</option>
-                <option value="es">Español (Spanish)</option>
-                <option value="de">Deutsch (German)</option>
-                <option value="ja">日本語 (Japanese)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="modal-actions" style="margin-top: 32px;">
-            <button type="button" id="btn-cancel-settings" class="btn btn-secondary">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save Settings</button>
-          </div>
-        </form>
-        
-      </div>
-    </div>
-  </div>
 
   <!-- 7. CUSTOM CONFIRMATION MODAL -->
   <div id="confirm-modal" class="modal-overlay">

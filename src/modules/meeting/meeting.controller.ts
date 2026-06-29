@@ -19,7 +19,7 @@ export class MeetingController {
   async createMeeting(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { title, scheduledAt, projectId } = req.body;
-      const hostId = req.session.user!.id;
+      const hostId = req.user!.id;
       const roomId = generateRoomCode();
 
       const newMeeting = await meetingRepository.create({
@@ -50,7 +50,7 @@ export class MeetingController {
 
   async getMeetings(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const hostId = req.session.user!.id;
+      const hostId = req.user!.id;
       const pagination = parsePagination(req.query);
       const [{ items: meetings, total }, transcriptSummaries] = await Promise.all([
         meetingRepository.findByHostIdPaginated(hostId, pagination),
@@ -86,7 +86,7 @@ export class MeetingController {
   async getMeetingTranscript(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
-      const userId = req.session.user!.id;
+      const userId = req.user!.id;
       const pagination = parsePagination(req.query);
       const meeting = await meetingRepository.findById(id);
       if (!meeting) {
@@ -137,7 +137,7 @@ export class MeetingController {
   async endMeeting(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
-      const userId = req.session.user!.id;
+      const userId = req.user!.id;
 
       const meeting = await meetingRepository.findById(id);
       if (!meeting) {
