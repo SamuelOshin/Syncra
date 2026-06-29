@@ -57,10 +57,10 @@ export const tm = {
     if (items.length === 0) {
       listBody.innerHTML = `
         <tr>
-          <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 32px;">
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-              <i data-lucide="info" style="width: 24px; height: 24px; color: var(--text-muted);"></i>
-              <span>No cached translations found. Start a call and speak to automatically cache segments.</span>
+          <td colspan="4">
+            <div class="list-empty">
+              <i data-lucide="info"></i>
+              <p>No cached translations found. Start a call and speak to automatically cache segments.</p>
             </div>
           </td>
         </tr>

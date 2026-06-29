@@ -2,9 +2,7 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
-import session from 'express-session';
-import pgSession from 'connect-pg-simple';
-import sqliteSession from 'connect-sqlite3';
+import cookieParser from 'cookie-parser';
 
 import config from './src/config';
 import initSocketManager from './src/sockets/socket.manager';
@@ -43,37 +41,8 @@ app.use(requestLogger);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configure Session Store dynamically
-let sessionStore: session.Store;
-
-if (isPostgres) {
-  const PgStore = pgSession(session);
-  sessionStore = new PgStore({
-    pool: pgPool!,
-    tableName: 'session'
-  });
-} else {
-  const SQLiteStore = sqliteSession(session);
-  // Point to the same database.db file to share connection
-  sessionStore = new SQLiteStore({
-    db: 'database.db',
-    table: 'sessions'
-  }) as unknown as session.Store;
-}
-
-// Session Middleware
-app.use(session({
-  store: sessionStore,
-  secret: config.sessionSecret,
-  resave: false,
-  saveUninitialized: false,
-  name: 'syncra.sid', // Custom cookie name for rebranding
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
+// Cookie Parser Middleware
+app.use(cookieParser());
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(process.cwd(), 'public')));

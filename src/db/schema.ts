@@ -1,4 +1,4 @@
-import { pgTable, varchar, timestamp, text, serial, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, timestamp, text, serial, boolean, integer } from 'drizzle-orm/pg-core';
 import { sqliteTable, text as sqliteText, integer as sqliteInteger } from 'drizzle-orm/sqlite-core';
 import config from '../config';
 
@@ -13,6 +13,7 @@ export const pgUsers = pgTable('users', {
   name: varchar('name', { length: 100 }).notNull(),
   email: varchar('email', { length: 150 }).unique().notNull(),
   password: varchar('password', { length: 255 }).notNull(),
+  tokenVersion: integer('token_version').default(1).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -21,6 +22,7 @@ export const sqliteUsers = sqliteTable('users', {
   name: sqliteText('name').notNull(),
   email: sqliteText('email').unique().notNull(),
   password: sqliteText('password').notNull(),
+  tokenVersion: sqliteInteger('token_version').default(1).notNull(),
   createdAt: sqliteText('created_at').default('(CURRENT_TIMESTAMP)').notNull(),
 });
 

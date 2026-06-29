@@ -11,7 +11,7 @@ const tmRepository = new TranslationMemoryRepository();
 export class AnalyticsController {
   async getOverviewStats(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.session.user!.id;
+      const userId = req.user!.id;
 
       const [totalMeetings, allTranscripts, glossaryTerms, tmSegments] = await Promise.all([
         meetingRepository.countByHostId(userId),

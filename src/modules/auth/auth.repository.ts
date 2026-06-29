@@ -1,6 +1,6 @@
 import { db, isPostgres } from '../../db/db.connection';
 import { pgUsers, sqliteUsers } from '../../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 // We cast the table based on the active driver to avoid TypeScript compiler union-type issues
 const usersTable = (isPostgres ? pgUsers : sqliteUsers) as any;
@@ -12,6 +12,7 @@ export interface User {
   name: string;
   email: string;
   password?: string;
+  tokenVersion?: number;
   createdAt?: Date | string;
 }
 
@@ -29,6 +30,20 @@ export class UserRepository {
   async create(user: User): Promise<User> {
     await dbClient.insert(usersTable).values(user);
     return user;
+  }
+
+  async update(userId: string, data: Partial<User>): Promise<void> {
+    await dbClient
+      .update(usersTable)
+      .set(data)
+      .where(eq(usersTable.id, userId));
+  }
+
+  async incrementTokenVersion(userId: string): Promise<void> {
+    await dbClient
+      .update(usersTable)
+      .set({ tokenVersion: sql`token_version + 1` })
+      .where(eq(usersTable.id, userId));
   }
 }
 export default UserRepository;

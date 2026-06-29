@@ -10,7 +10,7 @@ const tmRepository = new TranslationMemoryRepository();
 export class TranslationMemoryController {
   async getSegments(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.session.user!.id;
+      const userId = req.user!.id;
       const pagination = parsePagination(req.query);
       const { items: segments, total } = await tmRepository.findByUserIdPaginated(userId, pagination);
 
@@ -26,7 +26,7 @@ export class TranslationMemoryController {
   async createSegment(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { sourceText, targetText, sourceLang, targetLang, projectId } = req.body;
-      const userId = req.session.user!.id;
+      const userId = req.user!.id;
       const id = randomUUID();
       const normalizedSource = sourceText.trim().toLowerCase();
 
@@ -51,7 +51,7 @@ export class TranslationMemoryController {
   async deleteSegment(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
-      const userId = req.session.user!.id;
+      const userId = req.user!.id;
 
       const segment = await tmRepository.findById(id);
       if (!segment) {

@@ -12,7 +12,7 @@ const notificationRepository = new NotificationRepository();
 export class ProjectController {
   async getProjects(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.session.user!.id;
+      const userId = req.user!.id;
       const pagination = parsePagination(req.query);
       const { items: projects, total } = await projectRepository.findByUserIdPaginated(userId, pagination);
 
@@ -28,7 +28,7 @@ export class ProjectController {
   async createProject(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { name, description } = req.body;
-      const userId = req.session.user!.id;
+      const userId = req.user!.id;
       const id = randomUUID();
 
       const newProject = await projectRepository.create({
@@ -57,7 +57,7 @@ export class ProjectController {
   async deleteProject(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
-      const userId = req.session.user!.id;
+      const userId = req.user!.id;
 
       const project = await projectRepository.findById(id);
       if (!project) {

@@ -9,7 +9,7 @@ export class SearchController {
   async globalSearch(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { q } = req.query;
-      const userId = req.session.user!.id;
+      const userId = req.user!.id;
 
       if (!q || typeof q !== 'string' || !q.trim()) {
         next(new BadRequestError('Search query is required', 'SEARCH_QUERY_REQUIRED'));

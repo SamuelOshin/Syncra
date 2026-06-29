@@ -20,6 +20,7 @@ import { calendar } from './calendar.js';
 const socket = io();
 
 // UI Screens
+const splashScreen = document.getElementById('splash-screen');
 const authScreen = document.getElementById('auth-screen');
 const entryScreen = document.getElementById('entry-screen');
 const dashboardScreen = document.getElementById('dashboard-screen');
@@ -90,7 +91,23 @@ function showScreen(screen) {
 
 async function checkSessionAndRoute() {
   const urlRoomId = getRoomIdFromUrl();
+  const startTime = Date.now();
   
+  // Reset splash UI to loading state
+  const splashStatus = document.getElementById('splash-status');
+  const splashLoader = document.getElementById('splash-loader');
+  const splashError = document.getElementById('splash-error');
+  const logoIcon = document.getElementById('splash-logo-icon');
+  
+  if (splashStatus) splashStatus.textContent = 'Securing connection & loading workspace...';
+  if (splashLoader) splashLoader.classList.remove('hidden');
+  if (splashError) splashError.classList.add('hidden');
+  if (logoIcon) {
+    logoIcon.innerHTML = '<i data-lucide="aperture"></i>';
+    logoIcon.className = 'logo-icon animate-pulse';
+  }
+  if (window.lucide) window.lucide.createIcons();
+
   try {
     const payload = await api.getMe();
     currentUser = payload.data.user;
@@ -106,6 +123,12 @@ async function checkSessionAndRoute() {
       dropdownUserAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
     }
 
+    // Enforce a minimum splash duration (800ms) for a smooth, premium transition
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 800) {
+      await new Promise(resolve => setTimeout(resolve, 800 - elapsed));
+    }
+
     if (urlRoomId) {
       // Authenticated user direct navigation -> bypass join form
       joinRoom(urlRoomId, currentUser.name, 'en');
@@ -116,7 +139,36 @@ async function checkSessionAndRoute() {
       await dashboard.refresh();
     }
   } catch (err) {
-    // Unauthenticated
+    // Check if this is a network connectivity issue rather than a 401 Unauthenticated
+    const isNetworkError = err.message !== 'Unauthenticated';
+
+    if (isNetworkError) {
+      console.error('[Auth] Network or server error during session check:', err);
+
+      // Enforce a minimum splash duration (800ms) before showing error
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 800) {
+        await new Promise(resolve => setTimeout(resolve, 800 - elapsed));
+      }
+
+      // Update splash UI to show connection error
+      if (splashStatus) splashStatus.textContent = 'Unable to connect to server. Please check your network.';
+      if (splashLoader) splashLoader.classList.add('hidden');
+      if (splashError) splashError.classList.remove('hidden');
+      if (logoIcon) {
+        logoIcon.innerHTML = '<i data-lucide="wifi-off"></i>';
+        logoIcon.className = 'logo-icon error-icon';
+      }
+      if (window.lucide) window.lucide.createIcons();
+      return; // Do not route to auth/dashboard
+    }
+
+    // Unauthenticated (session expired or not logged in)
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 800) {
+      await new Promise(resolve => setTimeout(resolve, 800 - elapsed));
+    }
+
     if (urlRoomId) {
       document.getElementById('room-input').value = urlRoomId;
       showScreen(entryScreen);
@@ -243,6 +295,14 @@ function initGlobalEvents() {
         console.error('Logout error:', err);
         ui.showToast('Failed to log out. Please try again.', 'error');
       }
+    });
+  }
+
+  // Splash Retry Button
+  const btnSplashRetry = document.getElementById('btn-splash-retry');
+  if (btnSplashRetry) {
+    btnSplashRetry.addEventListener('click', () => {
+      checkSessionAndRoute();
     });
   }
 }
@@ -502,15 +562,17 @@ function handleExportClick() {
 }
 
 function initSidebarNavigation() {
-  const menuItems = document.querySelectorAll('.sidebar-menu .menu-item');
+  const menuItems = document.querySelectorAll('.sidebar-menu .menu-item, #btn-sidebar-settings');
   const contentViews = document.querySelectorAll('.content-view');
 
   menuItems.forEach(item => {
-    // Settings is still a modal (transient action), let settings.js handle it
-    if (item.id === 'btn-sidebar-settings') return;
-
     item.addEventListener('click', async (e) => {
       e.preventDefault();
+
+      // Stop camera preview if navigating AWAY from settings
+      if (window.syncraStopCameraPreview) {
+        window.syncraStopCameraPreview();
+      }
 
       const id = item.id;
       let targetViewId = 'view-dashboard';
@@ -520,6 +582,7 @@ function initSidebarNavigation() {
       else if (id === 'btn-sidebar-tm') targetViewId = 'view-tm';
       else if (id === 'btn-sidebar-glossary') targetViewId = 'view-glossary';
       else if (id === 'btn-sidebar-analytics') targetViewId = 'view-analytics';
+      else if (id === 'btn-sidebar-settings') targetViewId = 'view-settings';
 
       // Update active sidebar item
       menuItems.forEach(mi => mi.classList.remove('active'));
@@ -547,6 +610,8 @@ function initSidebarNavigation() {
           await glossary.loadTerms();
         } else if (targetViewId === 'view-analytics') {
           await analytics.loadAndRender();
+        } else if (targetViewId === 'view-settings') {
+          await settings.show();
         }
       } catch (err) {
         console.error('[Navigation] Error loading view data:', err);

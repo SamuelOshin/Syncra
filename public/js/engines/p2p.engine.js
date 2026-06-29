@@ -16,6 +16,7 @@ export const P2PEngine = {
   localStream: null,
   peerConnections: {}, // socketId -> RTCPeerConnection
   remoteStreams: {},    // socketId -> MediaStream
+  peerUsernames: {},    // socketId -> username
   socket: null,
   roomId: null,
   username: null,
@@ -28,6 +29,12 @@ export const P2PEngine = {
     this.socket = socket;
     
     console.log('[P2PEngine] Initializing Multi-Peer P2P Mesh Connection...');
+
+    // Set local avatar initials
+    const localAvatarCircle = document.getElementById('local-avatar-circle');
+    if (localAvatarCircle && this.username) {
+      localAvatarCircle.textContent = ui.getInitials(this.username);
+    }
 
     // 1. Get local media stream with persistent settings
     try {
@@ -67,25 +74,27 @@ export const P2PEngine = {
     this.setupSignalingListeners();
 
     // 3. Emit join room to begin peer discovery
-    this.socket.emit('join-room', this.roomId);
+    this.socket.emit('join-room', { roomId: this.roomId, username: this.username });
   },
 
   setupSignalingListeners() {
     this.removeSignalingListeners();
 
     // Fired when joining: gives us list of existing socket IDs in the room
-    this.socket.on('all-peers', async (peerIds) => {
-      console.log('[P2PEngine] Existing peers in room:', peerIds);
-      for (const peerId of peerIds) {
+    this.socket.on('all-peers', async (peers) => {
+      console.log('[P2PEngine] Existing peers in room:', peers);
+      for (const peer of peers) {
+        this.peerUsernames[peer.id] = peer.username;
         // We are the joining peer, so we initiate the offer (glare prevention)
-        await this.createPeerConnection(peerId, true);
+        await this.createPeerConnection(peer.id, true);
       }
     });
 
     // Fired when another user joins: we wait for their offer
-    this.socket.on('user-joined', async (peerId) => {
-      console.log('[P2PEngine] New peer joined:', peerId);
-      await this.createPeerConnection(peerId, false);
+    this.socket.on('user-joined', async (peer) => {
+      console.log('[P2PEngine] New peer joined:', peer.id);
+      this.peerUsernames[peer.id] = peer.username;
+      await this.createPeerConnection(peer.id, false);
     });
 
     // Fired when receiving a WebRTC offer
@@ -155,6 +164,18 @@ export const P2PEngine = {
       }
     });
 
+    // Fired when a peer toggles their camera
+    this.socket.on('peer-toggle-camera', ({ from, isCameraOff }) => {
+      const placeholder = document.getElementById(`peer-avatar-placeholder-${from}`);
+      if (placeholder) {
+        if (isCameraOff) {
+          placeholder.classList.add('active');
+        } else {
+          placeholder.classList.remove('active');
+        }
+      }
+    });
+
     // Fired when a peer leaves the room
     this.socket.on('user-left', (peerId) => {
       console.log('[P2PEngine] Peer disconnected:', peerId);
@@ -170,6 +191,7 @@ export const P2PEngine = {
       this.socket.off('answer');
       this.socket.off('ice-candidate');
       this.socket.off('user-left');
+      this.socket.off('peer-toggle-camera');
     }
   },
 
@@ -235,6 +257,9 @@ export const P2PEngine = {
     const container = document.getElementById('remote-videos-container');
     if (!container) return;
 
+    const username = this.peerUsernames[peerId] || 'Participant';
+    const initials = ui.getInitials(username);
+
     // Check if element already exists to avoid duplication
     let videoCard = document.getElementById(`peer-card-${peerId}`);
     if (!videoCard) {
@@ -246,10 +271,13 @@ export const P2PEngine = {
       videoCard.innerHTML = `
         <div class="video-wrapper">
           <video id="peer-video-${peerId}" autoplay playsinline></video>
+          <div class="video-avatar-placeholder" id="peer-avatar-placeholder-${peerId}">
+            <div class="video-avatar-circle">${ui.escapeHtml(initials)}</div>
+          </div>
           <div class="voice-indicator" id="peer-voice-${peerId}"></div>
         </div>
         <div class="participant-tag">
-          <span id="peer-name-${peerId}">Participant</span>
+          <span id="peer-name-${peerId}">${ui.escapeHtml(username)}</span>
         </div>
       `;
       container.appendChild(videoCard);
@@ -265,6 +293,25 @@ export const P2PEngine = {
       this.setupAudioVisualizer(stream, voiceIndicator);
     }
 
+    // Set up WebRTC track mute/unmute events as fallback
+    const videoTrack = stream.getVideoTracks()[0];
+    if (videoTrack) {
+      videoTrack.onmute = () => {
+        const p = document.getElementById(`peer-avatar-placeholder-${peerId}`);
+        if (p) p.classList.add('active');
+      };
+      videoTrack.onunmute = () => {
+        const p = document.getElementById(`peer-avatar-placeholder-${peerId}`);
+        if (p) p.classList.remove('active');
+      };
+      
+      // Initial state
+      const placeholder = document.getElementById(`peer-avatar-placeholder-${peerId}`);
+      if (placeholder && (videoTrack.muted || !videoTrack.enabled)) {
+        placeholder.classList.add('active');
+      }
+    }
+
     if (window.lucide) window.lucide.createIcons();
   },
 
@@ -278,6 +325,7 @@ export const P2PEngine = {
     }
 
     delete this.remoteStreams[peerId];
+    delete this.peerUsernames[peerId];
 
     const card = document.getElementById(`peer-card-${peerId}`);
     if (card) {
@@ -300,6 +348,18 @@ export const P2PEngine = {
       this.localStream.getVideoTracks().forEach(track => {
         track.enabled = !isCameraOff;
       });
+    }
+
+    // Toggle local placeholder
+    const localPlaceholder = document.getElementById('local-avatar-placeholder');
+    if (localPlaceholder) {
+      if (isCameraOff) localPlaceholder.classList.add('active');
+      else localPlaceholder.classList.remove('active');
+    }
+
+    // Broadcast to other peers via socket
+    if (this.socket) {
+      this.socket.emit('toggle-camera', { roomId: this.roomId, isCameraOff });
     }
     const localVideo = document.getElementById('local-video');
     if (localVideo) {

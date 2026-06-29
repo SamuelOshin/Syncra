@@ -62,6 +62,20 @@ export const LiveKitEngine = {
       }
     });
 
+    this.room.on(RoomEvent.TrackMuted, (publication, participant) => {
+      if (publication.kind === Track.Kind.Video) {
+        const placeholder = document.getElementById(`peer-avatar-placeholder-${participant.sid}`);
+        if (placeholder) placeholder.classList.add('active');
+      }
+    });
+
+    this.room.on(RoomEvent.TrackUnmuted, (publication, participant) => {
+      if (publication.kind === Track.Kind.Video) {
+        const placeholder = document.getElementById(`peer-avatar-placeholder-${participant.sid}`);
+        if (placeholder) placeholder.classList.remove('active');
+      }
+    });
+
     this.room.on(RoomEvent.ParticipantDisconnected, (participant) => {
       console.log(`[LiveKitEngine] Participant disconnected: ${participant.identity}`);
       this.removeRemoteVideo(participant);
@@ -71,6 +85,12 @@ export const LiveKitEngine = {
     try {
       await this.room.connect(url, token);
       console.log(`[LiveKitEngine] Connected to room: ${roomId} as ${username}`);
+
+      // Set local avatar initials
+      const localAvatarCircle = document.getElementById('local-avatar-circle');
+      if (localAvatarCircle && username) {
+        localAvatarCircle.textContent = ui.getInitials(username);
+      }
 
       const cameraDeviceId = localStorage.getItem('syncra_preferred_camera_id');
       const micDeviceId = localStorage.getItem('syncra_preferred_mic_id');
@@ -99,6 +119,9 @@ export const LiveKitEngine = {
           this.setupAudioVisualizer(stream, localVoiceIndicator);
         }
       }
+
+      // Join the socket.io room for captions and control events (like meeting-ended)
+      socket.emit('join-room', { roomId, username });
 
     } catch (err) {
       console.error('[LiveKitEngine] Error connecting to LiveKit room:', err);
@@ -131,6 +154,7 @@ export const LiveKitEngine = {
 
     const peerId = participant.sid;
     let videoCard = document.getElementById(`peer-card-${peerId}`);
+    const initials = ui.getInitials(participant.identity);
     
     if (!videoCard) {
       videoCard = document.createElement('div');
@@ -140,6 +164,9 @@ export const LiveKitEngine = {
       videoCard.innerHTML = `
         <div class="video-wrapper">
           <video id="peer-video-${peerId}" autoplay playsinline></video>
+          <div class="video-avatar-placeholder" id="peer-avatar-placeholder-${peerId}">
+            <div class="video-avatar-circle">${ui.escapeHtml(initials)}</div>
+          </div>
           <div class="voice-indicator" id="peer-voice-${peerId}"></div>
         </div>
         <div class="participant-tag">
@@ -152,6 +179,16 @@ export const LiveKitEngine = {
     const videoEl = document.getElementById(`peer-video-${peerId}`);
     if (videoEl) {
       track.attach(videoEl);
+    }
+
+    // Set initial video visibility based on track mute state
+    const placeholder = document.getElementById(`peer-avatar-placeholder-${peerId}`);
+    if (placeholder) {
+      if (track.isMuted) {
+        placeholder.classList.add('active');
+      } else {
+        placeholder.classList.remove('active');
+      }
     }
   },
 
@@ -198,9 +235,13 @@ export const LiveKitEngine = {
     if (this.room && this.room.localParticipant) {
       this.room.localParticipant.setCameraEnabled(!isCameraOff);
     }
-    const localVideo = document.getElementById('local-video');
-    if (localVideo) {
-      localVideo.style.opacity = isCameraOff ? '0.3' : '1';
+    const localPlaceholder = document.getElementById('local-avatar-placeholder');
+    if (localPlaceholder) {
+      if (isCameraOff) {
+        localPlaceholder.classList.add('active');
+      } else {
+        localPlaceholder.classList.remove('active');
+      }
     }
   },
 
