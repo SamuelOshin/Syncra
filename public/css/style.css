@@ -1582,6 +1582,12 @@ body, html {
   justify-content: space-between;
   padding: 16px 24px;
   border-bottom: 1px solid #F1F5F9;
+  cursor: grab;
+  user-select: none;
+}
+
+.panel-header:active {
+  cursor: grabbing;
 }
 
 .panel-header h3 {
@@ -2367,9 +2373,9 @@ body, html {
 
   .captions-panel {
     position: absolute !important;
-    bottom: 16px !important;
-    left: 16px !important;
-    right: 16px !important;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
     height: 140px !important;
     background: rgba(15, 23, 42, 0.65) !important;
     backdrop-filter: blur(12px) !important;
