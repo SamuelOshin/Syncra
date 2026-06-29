@@ -19,6 +19,18 @@ export const notifications = {
     btnBell.addEventListener('click', (e) => {
       e.stopPropagation();
       dropdown.classList.toggle('active');
+      
+      // Close profile dropdown if open
+      const profileDropdown = document.getElementById('profile-dropdown');
+      const profileTrigger = document.getElementById('profile-trigger');
+      if (profileDropdown) {
+        profileDropdown.classList.remove('active');
+      }
+      if (profileTrigger) {
+        profileTrigger.classList.remove('active');
+        profileTrigger.setAttribute('aria-expanded', 'false');
+      }
+
       if (dropdown.classList.contains('active')) {
         this.loadAndRender();
         this.markAsRead();

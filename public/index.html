@@ -252,15 +252,40 @@
                 <i data-lucide="history"></i>
               </button>
               
-              <div class="header-profile">
-                <div class="user-avatar" id="user-avatar">U</div>
-                <div class="profile-info-compact">
-                  <span id="profile-name" class="profile-name-text">Loading...</span>
-                  <span id="profile-email" class="profile-email-text">loading...</span>
-                </div>
-                <button id="btn-logout" class="btn-header-action btn-logout" aria-label="Log Out">
-                  <i data-lucide="log-out"></i>
+              <div class="header-profile-wrapper">
+                <button class="header-profile-trigger" id="profile-trigger" aria-label="User menu" aria-haspopup="true" aria-expanded="false">
+                  <div class="user-avatar" id="user-avatar">U</div>
+                  <i data-lucide="chevron-down" class="profile-chevron"></i>
                 </button>
+                
+                <!-- Profile Dropdown Card -->
+                <div id="profile-dropdown" class="profile-dropdown-card">
+                  <div class="profile-dropdown-header">
+                    <div class="user-avatar large" id="dropdown-user-avatar">U</div>
+                    <div class="profile-dropdown-info">
+                      <span id="profile-name" class="profile-name-text">Loading...</span>
+                      <span id="profile-email" class="profile-email-text">loading...</span>
+                    </div>
+                  </div>
+                  <div class="dropdown-divider"></div>
+                  <div class="profile-dropdown-body">
+                    <button type="button" class="dropdown-item" id="btn-profile-settings">
+                      <i data-lucide="settings"></i>
+                      <span>Account Settings</span>
+                    </button>
+                    <button type="button" class="dropdown-item" id="btn-profile-support">
+                      <i data-lucide="help-circle"></i>
+                      <span>Help & Support</span>
+                    </button>
+                  </div>
+                  <div class="dropdown-divider"></div>
+                  <div class="profile-dropdown-footer">
+                    <button type="button" id="btn-logout" class="dropdown-item logout-item">
+                      <i data-lucide="log-out"></i>
+                      <span>Log Out</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </header>

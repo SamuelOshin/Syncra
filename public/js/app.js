@@ -101,6 +101,11 @@ async function checkSessionAndRoute() {
     welcomeName.textContent = currentUser.name;
     userAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
 
+    const dropdownUserAvatar = document.getElementById('dropdown-user-avatar');
+    if (dropdownUserAvatar) {
+      dropdownUserAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
+    }
+
     if (urlRoomId) {
       // Authenticated user direct navigation -> bypass join form
       joinRoom(urlRoomId, currentUser.name, 'en');
@@ -175,6 +180,71 @@ function initGlobalEvents() {
 
     ui.showToast(`Language switched: Speaking ${userLang.toUpperCase()}`, 'info');
   });
+
+  // Profile Dropdown Toggle & Actions
+  const profileTrigger = document.getElementById('profile-trigger');
+  const profileDropdown = document.getElementById('profile-dropdown');
+  const notificationsDropdown = document.getElementById('notifications-dropdown');
+  
+  if (profileTrigger && profileDropdown) {
+    profileTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isActive = profileDropdown.classList.toggle('active');
+      profileTrigger.classList.toggle('active', isActive);
+      profileTrigger.setAttribute('aria-expanded', isActive ? 'true' : 'false');
+      
+      // Close notifications dropdown if open
+      if (notificationsDropdown) {
+        notificationsDropdown.classList.remove('active');
+      }
+    });
+    
+    document.addEventListener('click', (e) => {
+      if (!profileTrigger.contains(e.target) && !profileDropdown.contains(e.target)) {
+        profileDropdown.classList.remove('active');
+        profileTrigger.classList.remove('active');
+        profileTrigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  // Profile Dropdown Items Actions
+  const btnProfileSettings = document.getElementById('btn-profile-settings');
+  if (btnProfileSettings) {
+    btnProfileSettings.addEventListener('click', (e) => {
+      e.preventDefault();
+      profileDropdown?.classList.remove('active');
+      profileTrigger?.classList.remove('active');
+      profileTrigger?.setAttribute('aria-expanded', 'false');
+      document.getElementById('btn-sidebar-settings')?.click();
+    });
+  }
+
+  const btnProfileSupport = document.getElementById('btn-profile-support');
+  if (btnProfileSupport) {
+    btnProfileSupport.addEventListener('click', (e) => {
+      e.preventDefault();
+      profileDropdown?.classList.remove('active');
+      profileTrigger?.classList.remove('active');
+      profileTrigger?.setAttribute('aria-expanded', 'false');
+      ui.showToast('Support is available at support@syncra.io', 'info');
+    });
+  }
+
+  const btnLogout = document.getElementById('btn-logout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', async (e) => {
+      e.preventDefault();
+      try {
+        await api.signOut();
+        ui.showToast('Logged out successfully', 'success');
+        window.location.reload();
+      } catch (err) {
+        console.error('Logout error:', err);
+        ui.showToast('Failed to log out. Please try again.', 'error');
+      }
+    });
+  }
 }
 
 // ==========================================
