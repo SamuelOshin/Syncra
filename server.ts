@@ -24,6 +24,9 @@ import errorHandler from './src/middleware/error.middleware';
 import { generalApiLimiter } from './src/middleware/rate-limit.middleware';
 
 const app = express();
+// Trust proxy (necessary for express-rate-limit and secure cookies behind Railway load balancer)
+app.set('trust proxy', 1);
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
