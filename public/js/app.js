@@ -41,6 +41,7 @@ const btnMute = document.getElementById('btn-mute');
 const btnCamera = document.getElementById('btn-camera');
 const btnLeave = document.getElementById('btn-leave');
 const btnExport = document.getElementById('btn-export-transcript');
+const btnToggleCaptions = document.getElementById('btn-toggle-captions');
 
 // State Variables
 let currentUser = null;
@@ -214,6 +215,9 @@ function initGlobalEvents() {
   if (btnExport) {
     btnExport.addEventListener('click', handleExportClick);
   }
+  if (btnToggleCaptions) {
+    btnToggleCaptions.addEventListener('click', handleToggleCaptionsClick);
+  }
 
   // Interactive Language Toggle in Header
   document.querySelector('.translation-mode').addEventListener('click', () => {
@@ -344,6 +348,19 @@ async function joinRoom(roomId, name, lang) {
   roomTitle.textContent = `#${roomId}`;
   userLangBadge.textContent = userLang.toUpperCase();
   targetLangBadge.textContent = targetLang.toUpperCase();
+
+  // Reset captions panel visibility, position, and button state on join
+  const captionsPanel = document.querySelector('.captions-panel');
+  if (captionsPanel) {
+    captionsPanel.classList.remove('hidden');
+    captionsPanel.style.top = '';
+    captionsPanel.style.left = '';
+    captionsPanel.style.bottom = '';
+    captionsPanel.style.right = '';
+  }
+  if (btnToggleCaptions) {
+    btnToggleCaptions.className = 'ctrl-btn active';
+  }
 
   try {
     const mediaEngine = currentMeeting.mediaEngine;
@@ -511,6 +528,20 @@ function handleCameraClick() {
   lucide.createIcons();
 }
 
+function handleToggleCaptionsClick() {
+  const captionsPanel = document.querySelector('.captions-panel');
+  if (captionsPanel) {
+    const isHidden = captionsPanel.classList.toggle('hidden');
+    if (isHidden) {
+      btnToggleCaptions.classList.remove('active');
+      ui.showToast('Live translation captions hidden', 'warning');
+    } else {
+      btnToggleCaptions.classList.add('active');
+      ui.showToast('Live translation captions shown', 'info');
+    }
+  }
+}
+
 async function handleLeaveClick() {
   // If current user is the host, ask if they want to end the meeting for everyone
   if (currentUser && currentMeeting && currentMeeting.hostId === currentUser.id) {
@@ -549,6 +580,18 @@ function leaveCallLocally() {
   btnCamera.className = 'ctrl-btn active';
   btnMute.innerHTML = '<i data-lucide="mic"></i>';
   btnCamera.innerHTML = '<i data-lucide="video"></i>';
+
+  const captionsPanel = document.querySelector('.captions-panel');
+  if (captionsPanel) {
+    captionsPanel.classList.remove('hidden');
+    captionsPanel.style.top = '';
+    captionsPanel.style.left = '';
+    captionsPanel.style.bottom = '';
+    captionsPanel.style.right = '';
+  }
+  if (btnToggleCaptions) {
+    btnToggleCaptions.className = 'ctrl-btn active';
+  }
 
   // Navigate back home
   window.history.pushState({}, '', '/');
@@ -626,5 +669,75 @@ function initSidebarNavigation() {
       e.preventDefault();
       document.getElementById('btn-sidebar-calendar')?.click();
     });
+  }
+
+  // Initialize draggable captions panel for mobile
+  const captionsPanel = document.querySelector('.captions-panel');
+  const panelHeader = document.querySelector('.panel-header');
+  if (captionsPanel && panelHeader) {
+    makeElementDraggable(captionsPanel, panelHeader);
+  }
+}
+
+// Reusable Dragging Orchestrator for absolute-positioned elements (Mobile Layouts)
+function makeElementDraggable(el, handle) {
+  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+  
+  handle.addEventListener('mousedown', dragMouseDown);
+  handle.addEventListener('touchstart', dragTouchStart, { passive: false });
+
+  function dragMouseDown(e) {
+    if (window.innerWidth > 767) return; // Only draggable on mobile/tablet
+    e.preventDefault();
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    document.addEventListener('mouseup', closeDragElement);
+    document.addEventListener('mousemove', elementDrag);
+  }
+
+  function dragTouchStart(e) {
+    if (window.innerWidth > 767) return; // Only draggable on mobile/tablet
+    const touch = e.touches[0];
+    pos3 = touch.clientX;
+    pos4 = touch.clientY;
+    document.addEventListener('touchend', closeDragElement);
+    document.addEventListener('touchmove', elementTouchDrag, { passive: false });
+  }
+
+  function elementDrag(e) {
+    e.preventDefault();
+    calculateAndPosition(e.clientX, e.clientY);
+  }
+
+  function elementTouchDrag(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    calculateAndPosition(touch.clientX, touch.clientY);
+  }
+
+  function calculateAndPosition(clientX, clientY) {
+    pos1 = pos3 - clientX;
+    pos2 = pos4 - clientY;
+    pos3 = clientX;
+    pos4 = clientY;
+
+    const newTop = el.offsetTop - pos2;
+    const newLeft = el.offsetLeft - pos1;
+
+    // Bound clamping (keep within viewport)
+    const maxTop = window.innerHeight - el.offsetHeight - 10;
+    const maxLeft = window.innerWidth - el.offsetWidth - 10;
+    
+    el.style.top = Math.max(10, Math.min(newTop, maxTop)) + "px";
+    el.style.left = Math.max(10, Math.min(newLeft, maxLeft)) + "px";
+    el.style.bottom = "auto";
+    el.style.right = "auto";
+  }
+
+  function closeDragElement() {
+    document.removeEventListener('mouseup', closeDragElement);
+    document.removeEventListener('mousemove', elementDrag);
+    document.removeEventListener('touchend', closeDragElement);
+    document.removeEventListener('touchmove', elementTouchDrag);
   }
 }
