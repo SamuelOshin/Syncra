@@ -1942,6 +1942,23 @@ body, html {
   font-weight: 500;
 }
 
+
+/* Calendar View Desktop Base */
+.calendar-card {
+  padding: 24px;
+}
+.calendar-header {
+  padding: 0 0 20px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 24px;
+}
+.calendar-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 /* ==========================================================================
    5. RESPONSIVE MEDIA QUERIES & SAFARI FIXES
    ========================================================================== */
@@ -1953,6 +1970,40 @@ body, html {
     flex-direction: column;
     height: 100vh;
     overflow: hidden;
+  }
+
+  /* Dashboard Mobile Footer fixes */
+  .main-footer {
+    flex-direction: column !important;
+    height: auto !important;
+    padding: 20px 16px 84px 16px !important;
+    gap: 12px !important;
+    justify-content: center !important;
+  }
+
+  .footer-links {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 12px !important;
+  }
+
+  .main-content {
+    padding-bottom: 84px !important;
+  }
+
+  /* Calendar View Mobile fixes */
+  .calendar-card {
+    padding: 16px !important;
+  }
+
+  .calendar-header-content {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px;
+  }
+
+  .calendar-header h3 {
+    font-size: 1.2rem !important;
   }
   
   /* Modern Bottom Navigation Bar on Mobile */
