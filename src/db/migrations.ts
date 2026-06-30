@@ -96,6 +96,48 @@ export async function initializeDatabase() {
       await dbClient.execute(sql`ALTER TABLE translation_memory ADD COLUMN IF NOT EXISTS project_id VARCHAR(36);`);
       await dbClient.execute(sql`ALTER TABLE meeting_transcripts ADD COLUMN IF NOT EXISTS latency VARCHAR(10);`);
       await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INT DEFAULT 1 NOT NULL;`);
+      await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_language VARCHAR(10) DEFAULT 'en' NOT NULL;`);
+      await dbClient.execute(sql`ALTER TABLE chat_participants ADD COLUMN IF NOT EXISTS last_read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL;`);
+
+      await dbClient.execute(sql`
+        CREATE TABLE IF NOT EXISTS chats (
+          id VARCHAR(36) PRIMARY KEY,
+          name VARCHAR(150),
+          is_group BOOLEAN DEFAULT FALSE NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+        );
+      `);
+
+      await dbClient.execute(sql`
+        CREATE TABLE IF NOT EXISTS chat_participants (
+          id VARCHAR(36) PRIMARY KEY,
+          chat_id VARCHAR(36) NOT NULL,
+          user_id VARCHAR(36) NOT NULL,
+          joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          last_read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+        );
+      `);
+
+      await dbClient.execute(sql`
+        CREATE TABLE IF NOT EXISTS chat_messages (
+          id VARCHAR(36) PRIMARY KEY,
+          chat_id VARCHAR(36) NOT NULL,
+          sender_id VARCHAR(36) NOT NULL,
+          original_text TEXT NOT NULL,
+          source_lang VARCHAR(10) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+        );
+      `);
+
+      await dbClient.execute(sql`
+        CREATE TABLE IF NOT EXISTS message_translations (
+          id VARCHAR(36) PRIMARY KEY,
+          message_id VARCHAR(36) NOT NULL,
+          target_lang VARCHAR(10) NOT NULL,
+          translated_text TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+        );
+      `);
 
       // Table for connect-pg-simple session store (safe, self-contained creation)
       await dbClient.execute(sql`
@@ -114,6 +156,10 @@ export async function initializeDatabase() {
       await dbClient.execute(sql`CREATE INDEX IF NOT EXISTS idx_tm_exact_match ON translation_memory (user_id, source_lang, target_lang, source_text, project_id);`);
       await dbClient.execute(sql`CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications (user_id, created_at);`);
       await dbClient.execute(sql`CREATE INDEX IF NOT EXISTS idx_projects_user_created ON projects (user_id, created_at);`);
+      await dbClient.execute(sql`CREATE INDEX IF NOT EXISTS idx_chat_participants_chat ON chat_participants (chat_id);`);
+      await dbClient.execute(sql`CREATE INDEX IF NOT EXISTS idx_chat_participants_user ON chat_participants (user_id);`);
+      await dbClient.execute(sql`CREATE INDEX IF NOT EXISTS idx_chat_messages_chat_created ON chat_messages (chat_id, created_at);`);
+      await dbClient.execute(sql`CREATE INDEX IF NOT EXISTS idx_message_translations_msg ON message_translations (message_id);`);
 
       console.log('[Database] PostgreSQL migrations applied successfully.');
     } else {
@@ -193,6 +239,45 @@ export async function initializeDatabase() {
       try { sqliteDb.exec(`ALTER TABLE translation_memory ADD COLUMN project_id TEXT;`); } catch (e) {}
       try { sqliteDb.exec(`ALTER TABLE meeting_transcripts ADD COLUMN latency TEXT;`); } catch (e) {}
       try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1 NOT NULL;`); } catch (e) {}
+      try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN preferred_language TEXT DEFAULT 'en' NOT NULL;`); } catch (e) {}
+      try { 
+        sqliteDb.exec(`ALTER TABLE chat_participants ADD COLUMN last_read_at TEXT DEFAULT '1970-01-01 00:00:00' NOT NULL;`); 
+        sqliteDb.exec(`UPDATE chat_participants SET last_read_at = joined_at WHERE last_read_at = '1970-01-01 00:00:00';`);
+      } catch (e) {}
+
+      sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS chats (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          is_group INTEGER DEFAULT 0 NOT NULL,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS chat_participants (
+          id TEXT PRIMARY KEY,
+          chat_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          joined_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          last_read_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS chat_messages (
+          id TEXT PRIMARY KEY,
+          chat_id TEXT NOT NULL,
+          sender_id TEXT NOT NULL,
+          original_text TEXT NOT NULL,
+          source_lang TEXT NOT NULL,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS message_translations (
+          id TEXT PRIMARY KEY,
+          message_id TEXT NOT NULL,
+          target_lang TEXT NOT NULL,
+          translated_text TEXT NOT NULL,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+        );
+      `);
 
       sqliteDb.exec(`
         CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
@@ -202,6 +287,10 @@ export async function initializeDatabase() {
         CREATE INDEX IF NOT EXISTS idx_tm_exact_match ON translation_memory (user_id, source_lang, target_lang, source_text, project_id);
         CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications (user_id, created_at);
         CREATE INDEX IF NOT EXISTS idx_projects_user_created ON projects (user_id, created_at);
+        CREATE INDEX IF NOT EXISTS idx_chat_participants_chat ON chat_participants (chat_id);
+        CREATE INDEX IF NOT EXISTS idx_chat_participants_user ON chat_participants (user_id);
+        CREATE INDEX IF NOT EXISTS idx_chat_messages_chat_created ON chat_messages (chat_id, created_at);
+        CREATE INDEX IF NOT EXISTS idx_message_translations_msg ON message_translations (message_id);
       `);
 
       console.log('[Database] SQLite migrations applied successfully.');

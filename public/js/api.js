@@ -177,6 +177,44 @@ export const api = {
     const res = await fetch('/api/analytics/stats');
     if (!res.ok) throw new Error('Failed to fetch analytics statistics');
     return res.json();
+  },
+
+  async getChats() {
+    const res = await fetch('/api/chat');
+    if (!res.ok) throw new Error('Failed to fetch chats');
+    return res.json();
+  },
+
+  async createChat(isGroup, name, userIds) {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isGroup, name, userIds })
+    });
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.message || 'Failed to create chat');
+    return payload;
+  },
+
+  async getChatMessages(chatId) {
+    const res = await fetch(`/api/chat/${chatId}/messages`);
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.message || 'Failed to fetch messages');
+    return payload;
+  },
+
+  async searchChatUsers(query) {
+    const res = await fetch(`/api/chat/users?q=${encodeURIComponent(query)}`);
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.message || 'Failed to search users');
+    return payload;
+  },
+
+  async markChatAsRead(chatId) {
+    const res = await fetch(`/api/chat/${chatId}/read`, { method: 'POST' });
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.message || 'Failed to mark chat as read');
+    return payload;
   }
 };
 export default api;

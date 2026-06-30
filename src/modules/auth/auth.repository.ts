@@ -13,6 +13,7 @@ export interface User {
   email: string;
   password?: string;
   tokenVersion?: number;
+  preferredLanguage?: string;
   createdAt?: Date | string;
 }
 

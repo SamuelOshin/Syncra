@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import registerSignalingHandlers from './signaling.handler';
 import registerTranslationHandlers from './translation.handler';
+import registerChatHandlers from './chat.handler';
 
 export default (io: Server): void => {
   io.on('connection', (socket: Socket) => {
@@ -9,6 +10,7 @@ export default (io: Server): void => {
     // Register modular socket event handlers
     registerSignalingHandlers(io, socket);
     registerTranslationHandlers(io, socket);
+    registerChatHandlers(io, socket);
 
     socket.on('disconnect', () => {
       console.log(`User disconnected: ${socket.id}`);

@@ -85,7 +85,7 @@ All interactive elements must transition using a custom cubic-bezier curve that 
 ```
 +-----------------------------------------------------------------------------+
 | [Logo] Syncra      | [Search...]                          (Bell) (History) [AV] |
-| ENTERPRISE V2.4    |                                                        |
+| ENTERPRIV2.4 SE    |                                                        |
 +--------------------+--------------------------------------------------------+
 |                    |                                                        |
 |  +--------------+  |  Welcome back, Manager.                                |
