@@ -17,6 +17,7 @@ import searchRoutes from './src/modules/search/search.routes';
 import notificationRoutes from './src/modules/notifications/notification.routes';
 import projectRoutes from './src/modules/project/project.routes';
 import analyticsRoutes from './src/modules/analytics/analytics.routes';
+import chatRoutes from './src/modules/chat/chat.routes';
 import requestLogger from './src/middleware/logger.middleware';
 import errorHandler from './src/middleware/error.middleware';
 import { generalApiLimiter } from './src/middleware/rate-limit.middleware';
@@ -58,6 +59,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/chat', chatRoutes);
 
 // HTML Routing for SPA Room Links
 app.get('/meet/:roomId', (req, res) => {

@@ -19,6 +19,10 @@ class Config {
   public readonly livekitApiKey: string;
   public readonly livekitApiSecret: string;
   public readonly hasLiveKit: boolean;
+  public readonly deeplApiKey: string;
+  public readonly googleTranslateApiKey: string;
+  public readonly primaryTranslationProvider: string;
+  public readonly translationFallbackChain: string;
 
   constructor() {
     this.port = this.normalizePort(process.env.PORT || '3000');
@@ -33,6 +37,12 @@ class Config {
     this.openRouterApiUrl = process.env.OPENROUTER_API_URL || "https://openrouter.ai/api/v1/chat/completions";
     this.modelName = process.env.MODEL_NAME || "google/gemini-2.5-flash";
     this.databaseUrl = process.env.DATABASE_URL;
+
+    // Translation Config
+    this.deeplApiKey = process.env.DEEPL_API_KEY || '';
+    this.googleTranslateApiKey = process.env.GOOGLE_TRANSLATE_API_KEY || '';
+    this.primaryTranslationProvider = process.env.PRIMARY_TRANSLATION_PROVIDER || 'deepl';
+    this.translationFallbackChain = process.env.TRANSLATION_FALLBACK_CHAIN || 'google,openrouter';
 
     const secret = process.env.SESSION_SECRET;
     if (!secret && process.env.NODE_ENV === 'production') {

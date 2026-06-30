@@ -73,7 +73,7 @@ export class AuthController {
 
       // Generate Access Token (15 minutes)
       const accessToken = jwt.sign(
-        { id: user.id, name: user.name, email: user.email },
+        { id: user.id, name: user.name, email: user.email, preferredLanguage: user.preferredLanguage || 'en' },
         config.jwtAccessSecret,
         { expiresIn: config.jwtAccessExpiresIn as any }
       );
@@ -106,6 +106,7 @@ export class AuthController {
           id: user.id,
           name: user.name,
           email: user.email,
+          preferredLanguage: user.preferredLanguage || 'en',
         }
       });
     } catch (error) {
@@ -197,7 +198,7 @@ export class AuthController {
 
         // Generate Access Token (15 minutes)
         const accessToken = jwt.sign(
-          { id: user.id, name: user.name, email: user.email },
+          { id: user.id, name: user.name, email: user.email, preferredLanguage: user.preferredLanguage || 'en' },
           config.jwtAccessSecret,
           { expiresIn: config.jwtAccessExpiresIn as any }
         );
@@ -244,7 +245,7 @@ export class AuthController {
         return;
       }
 
-      const { name, email } = req.body;
+      const { name, email, preferredLanguage } = req.body;
       const userId = req.user.id;
 
       // Check if email is already taken by another user
@@ -258,11 +259,12 @@ export class AuthController {
       await userRepository.update(userId, {
         name,
         email: email.toLowerCase(),
+        preferredLanguage: preferredLanguage || 'en',
       });
 
       // Issue a new Access Token with updated name/email
       const accessToken = jwt.sign(
-        { id: userId, name, email: email.toLowerCase() },
+        { id: userId, name, email: email.toLowerCase(), preferredLanguage: preferredLanguage || 'en' },
         config.jwtAccessSecret,
         { expiresIn: config.jwtAccessExpiresIn as any }
       );
@@ -279,6 +281,7 @@ export class AuthController {
           id: userId,
           name,
           email: email.toLowerCase(),
+          preferredLanguage: preferredLanguage || 'en',
         }
       });
     } catch (error) {

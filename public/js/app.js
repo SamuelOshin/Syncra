@@ -16,6 +16,7 @@ import { notifications } from './notifications.js';
 import { projects } from './projects.js';
 import { analytics } from './analytics.js';
 import { calendar } from './calendar.js';
+import { chat } from './chat.js';
 
 const socket = io();
 
@@ -76,6 +77,41 @@ window.addEventListener('DOMContentLoaded', async () => {
   analytics.init();
   calendar.init();
   initSidebarNavigation();
+
+  // Initialize Sidebar Collapse State
+  const sidebar = document.querySelector('.sidebar');
+  const toggleBtn = document.getElementById('btn-sidebar-toggle');
+  const isCollapsed = localStorage.getItem('syncra_sidebar_collapsed') === 'true';
+  
+  if (isCollapsed && sidebar) {
+    sidebar.classList.add('collapsed');
+    if (toggleBtn) {
+      toggleBtn.setAttribute('title', 'Expand Sidebar');
+      toggleBtn.innerHTML = '<i data-lucide="sidebar" style="transform: scaleX(-1);"></i>';
+      if (window.lucide) window.lucide.createIcons();
+    }
+  }
+
+  toggleBtn?.addEventListener('click', () => {
+    if (!sidebar) return;
+    const collapsed = sidebar.classList.toggle('collapsed');
+    localStorage.setItem('syncra_sidebar_collapsed', collapsed);
+    
+    if (collapsed) {
+      toggleBtn.setAttribute('title', 'Expand Sidebar');
+      toggleBtn.innerHTML = '<i data-lucide="sidebar" style="transform: scaleX(-1);"></i>';
+    } else {
+      toggleBtn.setAttribute('title', 'Collapse Sidebar');
+      toggleBtn.innerHTML = '<i data-lucide="sidebar"></i>';
+    }
+    if (window.lucide) window.lucide.createIcons();
+  });
+  
+  // Keep local currentUser in sync across SPA modules
+  document.addEventListener('syncra-profile-updated', (e) => {
+    currentUser = e.detail;
+  });
+
   window.checkSessionAndRoute = checkSessionAndRoute; // Expose for SPA search routing
   await checkSessionAndRoute();
 });
@@ -112,6 +148,9 @@ async function checkSessionAndRoute() {
   try {
     const payload = await api.getMe();
     currentUser = payload.data.user;
+    
+    // Initialize Chat module
+    chat.init(currentUser, socket);
     
     // Populate Profile Header UI
     profileName.textContent = currentUser.name;
@@ -428,6 +467,7 @@ function removeInterimCaption() {
 // Fired when the host ends the call for everyone
 socket.on('meeting-ended', () => {
   console.log('Host has ended the meeting. Leaving call.');
+  ui.showToast('The host has ended this meeting.', 'info');
   webrtc.cleanup();
   speech.stop();
   socket.disconnect();
@@ -625,6 +665,7 @@ function initSidebarNavigation() {
       else if (id === 'btn-sidebar-tm') targetViewId = 'view-tm';
       else if (id === 'btn-sidebar-glossary') targetViewId = 'view-glossary';
       else if (id === 'btn-sidebar-analytics') targetViewId = 'view-analytics';
+      else if (id === 'btn-sidebar-chat') targetViewId = 'view-chat';
       else if (id === 'btn-sidebar-settings') targetViewId = 'view-settings';
 
       // Update active sidebar item
@@ -653,6 +694,8 @@ function initSidebarNavigation() {
           await glossary.loadTerms();
         } else if (targetViewId === 'view-analytics') {
           await analytics.loadAndRender();
+        } else if (targetViewId === 'view-chat') {
+          await chat.refreshChats();
         } else if (targetViewId === 'view-settings') {
           await settings.show();
         }

@@ -110,11 +110,13 @@ export const settings = {
 
       const nameInput = document.getElementById('profile-name-input');
       const emailInput = document.getElementById('profile-email-input');
+      const langSelect = document.getElementById('profile-lang-input');
       const avatarPreview = document.getElementById('settings-avatar-preview');
       const securityTab = document.getElementById('settings-tab-security');
 
       if (nameInput) nameInput.value = user.name;
       if (emailInput) emailInput.value = user.email;
+      if (langSelect) langSelect.value = user.preferredLanguage || 'en';
       if (avatarPreview) avatarPreview.textContent = user.name.charAt(0).toUpperCase();
 
       // Check if OAuth user (e.g. sandbox or oauth without local password management)
@@ -204,22 +206,27 @@ export const settings = {
   async updateProfile() {
     const nameInput = document.getElementById('profile-name-input');
     const emailInput = document.getElementById('profile-email-input');
+    const langSelect = document.getElementById('profile-lang-input');
     if (!nameInput || !emailInput) return;
 
     const name = nameInput.value.trim();
     const email = emailInput.value.trim();
+    const preferredLanguage = langSelect ? langSelect.value : 'en';
 
     try {
       const res = await fetch('/api/auth/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email }),
+        body: JSON.stringify({ name, email, preferredLanguage }),
       });
 
       const payload = await res.json();
       if (!res.ok) throw new Error(payload.message || 'Failed to update profile');
 
       ui.showToast('Profile updated successfully!', 'success');
+      
+      // Dispatch custom event to notify other SPA modules of profile changes
+      document.dispatchEvent(new CustomEvent('syncra-profile-updated', { detail: payload.data.user }));
       
       // Update Header UI
       const profileName = document.getElementById('profile-name');

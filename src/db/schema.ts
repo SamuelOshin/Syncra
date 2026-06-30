@@ -14,6 +14,7 @@ export const pgUsers = pgTable('users', {
   email: varchar('email', { length: 150 }).unique().notNull(),
   password: varchar('password', { length: 255 }).notNull(),
   tokenVersion: integer('token_version').default(1).notNull(),
+  preferredLanguage: varchar('preferred_language', { length: 10 }).default('en').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -23,6 +24,7 @@ export const sqliteUsers = sqliteTable('users', {
   email: sqliteText('email').unique().notNull(),
   password: sqliteText('password').notNull(),
   tokenVersion: sqliteInteger('token_version').default(1).notNull(),
+  preferredLanguage: sqliteText('preferred_language').default('en').notNull(),
   createdAt: sqliteText('created_at').default('(CURRENT_TIMESTAMP)').notNull(),
 });
 
@@ -183,6 +185,94 @@ export const sqliteProjects = sqliteTable('projects', {
 });
 
 export const projects = isPostgres ? pgProjects : sqliteProjects;
+
+// ==========================================
+// 8. CHATS TABLE
+// ==========================================
+
+export const pgChats = pgTable('chats', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  name: varchar('name', { length: 150 }),
+  isGroup: boolean('is_group').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const sqliteChats = sqliteTable('chats', {
+  id: sqliteText('id').primaryKey(),
+  name: sqliteText('name'),
+  isGroup: sqliteInteger('is_group').default(0).notNull(),
+  createdAt: sqliteText('created_at').default('(CURRENT_TIMESTAMP)').notNull(),
+});
+
+export const chats = isPostgres ? pgChats : sqliteChats;
+
+// ==========================================
+// 9. CHAT PARTICIPANTS TABLE
+// ==========================================
+
+export const pgChatParticipants = pgTable('chat_participants', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  chatId: varchar('chat_id', { length: 36 }).notNull(),
+  userId: varchar('user_id', { length: 36 }).notNull(),
+  joinedAt: timestamp('joined_at').defaultNow().notNull(),
+  lastReadAt: timestamp('last_read_at').defaultNow().notNull(),
+});
+
+export const sqliteChatParticipants = sqliteTable('chat_participants', {
+  id: sqliteText('id').primaryKey(),
+  chatId: sqliteText('chat_id').notNull(),
+  userId: sqliteText('user_id').notNull(),
+  joinedAt: sqliteText('joined_at').default('(CURRENT_TIMESTAMP)').notNull(),
+  lastReadAt: sqliteText('last_read_at').default('(CURRENT_TIMESTAMP)').notNull(),
+});
+
+export const chatParticipants = isPostgres ? pgChatParticipants : sqliteChatParticipants;
+
+// ==========================================
+// 10. CHAT MESSAGES TABLE
+// ==========================================
+
+export const pgChatMessages = pgTable('chat_messages', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  chatId: varchar('chat_id', { length: 36 }).notNull(),
+  senderId: varchar('sender_id', { length: 36 }).notNull(),
+  originalText: text('original_text').notNull(),
+  sourceLang: varchar('source_lang', { length: 10 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const sqliteChatMessages = sqliteTable('chat_messages', {
+  id: sqliteText('id').primaryKey(),
+  chatId: sqliteText('chat_id').notNull(),
+  senderId: sqliteText('sender_id').notNull(),
+  originalText: sqliteText('original_text').notNull(),
+  sourceLang: sqliteText('source_lang').notNull(),
+  createdAt: sqliteText('created_at').default('(CURRENT_TIMESTAMP)').notNull(),
+});
+
+export const chatMessages = isPostgres ? pgChatMessages : sqliteChatMessages;
+
+// ==========================================
+// 11. MESSAGE TRANSLATIONS TABLE
+// ==========================================
+
+export const pgMessageTranslations = pgTable('message_translations', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  messageId: varchar('message_id', { length: 36 }).notNull(),
+  targetLang: varchar('target_lang', { length: 10 }).notNull(),
+  translatedText: text('translated_text').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const sqliteMessageTranslations = sqliteTable('message_translations', {
+  id: sqliteText('id').primaryKey(),
+  messageId: sqliteText('message_id').notNull(),
+  targetLang: sqliteText('target_lang').notNull(),
+  translatedText: sqliteText('translated_text').notNull(),
+  createdAt: sqliteText('created_at').default('(CURRENT_TIMESTAMP)').notNull(),
+});
+
+export const messageTranslations = isPostgres ? pgMessageTranslations : sqliteMessageTranslations;
 
 
 

@@ -10,6 +10,7 @@ interface AccessTokenPayload {
   id: string;
   name: string;
   email: string;
+  preferredLanguage?: string;
 }
 
 interface RefreshTokenPayload {
@@ -24,6 +25,7 @@ declare global {
         id: string;
         name: string;
         email: string;
+        preferredLanguage?: string;
       };
     }
   }
@@ -47,6 +49,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         id: decoded.id,
         name: decoded.name,
         email: decoded.email,
+        preferredLanguage: decoded.preferredLanguage || 'en',
       };
       return next();
     } catch (err: any) {
@@ -77,7 +80,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
     // Generate a new Access Token
     const newAccessToken = jwt.sign(
-      { id: user.id, name: user.name, email: user.email },
+      { id: user.id, name: user.name, email: user.email, preferredLanguage: user.preferredLanguage || 'en' },
       config.jwtAccessSecret,
       { expiresIn: config.jwtAccessExpiresIn as any }
     );
@@ -95,6 +98,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       id: user.id,
       name: user.name,
       email: user.email,
+      preferredLanguage: user.preferredLanguage || 'en',
     };
 
     return next();

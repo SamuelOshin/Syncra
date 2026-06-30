@@ -193,8 +193,11 @@
             <i data-lucide="aperture"></i>
             <div class="brand-meta">
               <span class="brand-name">Syncra</span>
-              <span class="brand-version">ENTERPRISE V2.4</span>
+              <span class="brand-version">ENTERPRISE V0.1</span>
             </div>
+            <button id="btn-sidebar-toggle" class="btn-sidebar-toggle" title="Collapse Sidebar">
+              <i data-lucide="sidebar"></i>
+            </button>
           </div>
           
           <div class="sidebar-action">
@@ -229,6 +232,10 @@
             <a href="#" class="menu-item" id="btn-sidebar-analytics">
               <i data-lucide="bar-chart-2"></i>
               <span>Analytics</span>
+            </a>
+            <a href="#" class="menu-item" id="btn-sidebar-chat">
+              <i data-lucide="message-square"></i>
+              <span>Chat</span>
             </a>
           </nav>
           
@@ -646,6 +653,94 @@
               </div>
             </div>
 
+             <!-- 8. CHAT VIEW -->
+            <div id="view-chat" class="content-view">
+              <div class="glass-card chat-card-layout">
+                <!-- Chat Sidebar (Left Panel) -->
+                <div class="chat-sidebar">
+                  <div class="chat-sidebar-header">
+                    <h3>Messages</h3>
+                    <button id="btn-new-chat" class="btn btn-icon" title="New Chat">
+                      <i data-lucide="plus-circle"></i>
+                    </button>
+                  </div>
+                  <div class="chat-search-wrapper">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="chat-search-input" placeholder="Search conversations..." autocomplete="off">
+                  </div>
+                  <div class="chat-list-container">
+                    <div id="chat-list" class="chat-list">
+                      <!-- Populated dynamically -->
+                      <div class="chat-empty-state-list">Loading chats...</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Chat Window (Right Panel) -->
+                <div class="chat-window">
+                  <!-- Empty State -->
+                  <div id="chat-window-empty" class="chat-window-empty-state">
+                    <div class="empty-icon-wrapper">
+                      <i data-lucide="message-square"></i>
+                    </div>
+                    <h4>Your Conversation Workspace</h4>
+                    <p>Select an existing conversation or start a new chat with a colleague. Messages are translated automatically in real-time.</p>
+                    <button id="btn-empty-new-chat" class="btn btn-primary">
+                      <i data-lucide="plus"></i>
+                      <span>Start New Conversation</span>
+                    </button>
+                  </div>
+
+                  <!-- Active Chat State -->
+                  <div id="chat-window-active" class="chat-window-active-container" style="display: none;">
+                    <div class="chat-header">
+                      <div class="chat-header-user">
+                        <button id="btn-chat-back" class="btn btn-icon btn-chat-back" title="Back to Messages">
+                          <i data-lucide="arrow-left"></i>
+                        </button>
+                        <div class="chat-header-avatar" id="active-chat-avatar">C</div>
+                        <div class="chat-header-info">
+                          <h4 id="active-chat-name">Chat Room</h4>
+                          <span id="active-chat-status" class="chat-status-subtext">Participants...</span>
+                        </div>
+                      </div>
+                      <div class="chat-header-actions">
+                        <!-- Leave/Actions Button -->
+                      </div>
+                    </div>
+
+                    <div id="chat-messages-container" class="chat-messages-container">
+                      <!-- Messages will be populated here -->
+                    </div>
+
+                    <div id="chat-typing-indicator" class="chat-typing-indicator" style="display: none;">
+                      <span class="typing-dot"></span>
+                      <span class="typing-dot"></span>
+                      <span class="typing-dot"></span>
+                      <span class="typing-text">Someone is typing...</span>
+                    </div>
+
+                    <div class="chat-composer-container">
+                      <form id="chat-composer-form" class="chat-composer-form">
+                        <!-- Source Language Selector -->
+                        <div class="chat-composer-lang">
+                          <select id="chat-source-lang-select" title="Writing Language">
+                            <!-- Populated dynamically -->
+                          </select>
+                        </div>
+                        <div class="chat-input-wrapper">
+                          <input type="text" id="chat-message-input" placeholder="Type a message..." autocomplete="off" required>
+                        </div>
+                        <button type="submit" id="btn-send-chat" class="btn btn-primary btn-send">
+                          <i data-lucide="send"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- 7. SETTINGS VIEW -->
             <div id="view-settings" class="content-view">
               <div class="glass-card settings-card">
@@ -698,12 +793,34 @@
                         </div>
 
                         <div class="input-group">
-                          <label for="profile-email-input">Email Address</label>
-                          <div class="input-wrapper">
-                            <i data-lucide="mail"></i>
-                            <input type="email" id="profile-email-input" placeholder="you@company.com" required autocomplete="email">
-                          </div>
-                        </div>
+                           <label for="profile-email-input">Email Address</label>
+                           <div class="input-wrapper">
+                             <i data-lucide="mail"></i>
+                             <input type="email" id="profile-email-input" placeholder="you@company.com" required autocomplete="email">
+                           </div>
+                         </div>
+
+                         <div class="input-group">
+                           <label for="profile-lang-input">Preferred Translation Language</label>
+                           <div class="input-wrapper">
+                             <i data-lucide="languages"></i>
+                             <select id="profile-lang-input" required>
+                               <option value="en">English</option>
+                               <option value="fr">Français (French)</option>
+                               <option value="es">Español (Spanish)</option>
+                               <option value="de">Deutsch (German)</option>
+                               <option value="ja">日本語 (Japanese)</option>
+                               <option value="pt">Português (Portuguese)</option>
+                               <option value="it">Italiano (Italian)</option>
+                               <option value="nl">Nederlands (Dutch)</option>
+                               <option value="zh">中文 (Chinese)</option>
+                               <option value="ru">Русский (Russian)</option>
+                               <option value="ar">العربية (Arabic)</option>
+                               <option value="hi">हिन्दी (Hindi)</option>
+                               <option value="ko">한국어 (Korean)</option>
+                             </select>
+                           </div>
+                         </div>
                         
                         <button type="submit" class="btn btn-primary" id="btn-save-profile">
                           <i data-lucide="save"></i>
@@ -1039,6 +1156,51 @@
   </div>
 
   <!-- Modals converted to inline content views -->
+
+  <!-- START NEW CHAT MODAL -->
+  <div id="new-chat-modal" class="modal-overlay">
+    <div class="glass-card modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Start New Conversation</h3>
+          <p class="subtitle">Select participants to begin</p>
+        </div>
+        <button id="btn-close-new-chat" class="btn-close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <!-- Chat Type Toggle -->
+        <div class="chat-type-toggle">
+          <button type="button" class="chat-type-btn active" id="btn-type-dm">Direct Message</button>
+          <button type="button" class="chat-type-btn" id="btn-type-group">Group Chat</button>
+        </div>
+
+        <!-- Group Name Input (Only visible for Group Chat) -->
+        <div id="group-name-wrapper" class="input-group" style="display: none; margin-top: 16px;">
+          <label for="new-group-name">Group Name</label>
+          <div class="input-wrapper">
+            <i data-lucide="users"></i>
+            <input type="text" id="new-group-name" placeholder="Enter group name...">
+          </div>
+        </div>
+
+        <!-- User Search -->
+        <div class="search-bar" style="margin-top: 16px;">
+          <i data-lucide="search"></i>
+          <input type="text" id="new-chat-user-search" placeholder="Search colleagues by name or email..." autocomplete="off">
+        </div>
+
+        <!-- Scrollable Users List -->
+        <div class="modal-users-list-title" style="margin-top: 12px; font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">COLLEAGUES</div>
+        <div id="new-chat-users-list" class="modal-users-list">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-cancel-new-chat" class="btn btn-secondary">Cancel</button>
+        <button id="btn-create-chat-submit" class="btn btn-primary" disabled>Start Chat</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 7. CUSTOM CONFIRMATION MODAL -->
   <div id="confirm-modal" class="modal-overlay">
