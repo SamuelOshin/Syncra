@@ -97,7 +97,6 @@ export async function initializeDatabase() {
       await dbClient.execute(sql`ALTER TABLE meeting_transcripts ADD COLUMN IF NOT EXISTS latency VARCHAR(10);`);
       await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INT DEFAULT 1 NOT NULL;`);
       await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_language VARCHAR(10) DEFAULT 'en' NOT NULL;`);
-      await dbClient.execute(sql`ALTER TABLE chat_participants ADD COLUMN IF NOT EXISTS last_read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL;`);
 
       await dbClient.execute(sql`
         CREATE TABLE IF NOT EXISTS chats (
@@ -117,6 +116,8 @@ export async function initializeDatabase() {
           last_read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
       `);
+
+      await dbClient.execute(sql`ALTER TABLE chat_participants ADD COLUMN IF NOT EXISTS last_read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL;`);
 
       await dbClient.execute(sql`
         CREATE TABLE IF NOT EXISTS chat_messages (
@@ -240,10 +241,6 @@ export async function initializeDatabase() {
       try { sqliteDb.exec(`ALTER TABLE meeting_transcripts ADD COLUMN latency TEXT;`); } catch (e) {}
       try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1 NOT NULL;`); } catch (e) {}
       try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN preferred_language TEXT DEFAULT 'en' NOT NULL;`); } catch (e) {}
-      try { 
-        sqliteDb.exec(`ALTER TABLE chat_participants ADD COLUMN last_read_at TEXT DEFAULT '1970-01-01 00:00:00' NOT NULL;`); 
-        sqliteDb.exec(`UPDATE chat_participants SET last_read_at = joined_at WHERE last_read_at = '1970-01-01 00:00:00';`);
-      } catch (e) {}
 
       sqliteDb.exec(`
         CREATE TABLE IF NOT EXISTS chats (
@@ -278,6 +275,11 @@ export async function initializeDatabase() {
           created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
       `);
+
+      try { 
+        sqliteDb.exec(`ALTER TABLE chat_participants ADD COLUMN last_read_at TEXT DEFAULT '1970-01-01 00:00:00' NOT NULL;`); 
+        sqliteDb.exec(`UPDATE chat_participants SET last_read_at = joined_at WHERE last_read_at = '1970-01-01 00:00:00';`);
+      } catch (e) {}
 
       sqliteDb.exec(`
         CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
