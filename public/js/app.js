@@ -13,6 +13,7 @@ import { settings } from './settings.js';
 import { tm } from './tm.js';
 import { search } from './search.js';
 import { notifications } from './notifications.js';
+import { audioStreamer } from './audio-streamer.js';
 import { projects } from './projects.js';
 import { analytics } from './analytics.js';
 import { calendar } from './calendar.js';
@@ -410,6 +411,21 @@ async function joinRoom(roomId, name, lang) {
     // 2. Connect to the media engine (handles local stream and room connection)
     await webrtc.connect(roomId, userName, mediaEngine, socket);
 
+    // 2b. Start server-side STT audio streaming (works on all platforms including mobile)
+    try {
+      const localAudioStream = webrtc.getLocalAudioStream();
+      if (localAudioStream) {
+        speech.setServerSTTActive(true);
+        audioStreamer.init(socket, roomId, userLang, userName);
+        await audioStreamer.start(localAudioStream);
+        console.log('[JoinRoom] Server-side STT audio streaming started.');
+      } else {
+        console.warn('[JoinRoom] No local audio stream available, falling back to Web Speech API.');
+      }
+    } catch (sttErr) {
+      console.warn('[JoinRoom] Server-side STT failed to start, falling back to Web Speech API:', sttErr);
+    }
+
     // 3. Start speech-to-text translation
     speech.init(userLang, onFinalTranscript, onInterimTranscript);
 
@@ -473,6 +489,7 @@ socket.on('meeting-ended', () => {
   ui.showToast('The host has ended this meeting.', 'info');
   webrtc.cleanup();
   speech.stop();
+  audioStreamer.stop();
   socket.disconnect();
   socket.connect(); // Reconnect to refresh socket.id for next session
   
@@ -491,6 +508,24 @@ socket.on('meeting-ended', () => {
 socket.on('user-left', (peerId) => {
   ui.showToast('Participant left the call.', 'info');
 });
+
+  socket.on('interim-caption', ({ text, speakerName: name }) => {
+    let interimCard = document.getElementById('interim-caption-card');
+    if (!interimCard) {
+      interimCard = document.createElement('div');
+      interimCard.id = 'interim-caption-card';
+      interimCard.className = 'caption-card interim';
+      captionStream.appendChild(interimCard);
+    }
+    interimCard.innerHTML = `
+      <div class="caption-meta">
+        <strong>${name}</strong>
+        <span class="interim-badge">speaking...</span>
+      </div>
+      <p class="original">${text}</p>
+    `;
+    captionStream.scrollTop = captionStream.scrollHeight;
+  });
 
 // Receive translated captions from server
 socket.on('new-caption', (data) => {
@@ -540,6 +575,7 @@ function handleMuteClick() {
   isMuted = !isMuted;
   webrtc.toggleMute(isMuted);
   speech.setMuted(isMuted);
+  audioStreamer.setMuted(isMuted);
 
   if (isMuted) {
     btnMute.classList.remove('active');
@@ -606,6 +642,7 @@ async function handleLeaveClick() {
 function leaveCallLocally() {
   webrtc.cleanup();
   speech.stop();
+  audioStreamer.stop();
 
   socket.disconnect();
   socket.connect(); // Reconnect to refresh socket.id for next call

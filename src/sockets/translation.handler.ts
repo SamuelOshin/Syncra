@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import translationService from '../services/translation.service';
+import { translationManager } from '../services/translation/translation.manager';
 import { TranslationRequest, CaptionPayload } from '../types';
 import { MeetingRepository } from '../modules/meeting/meeting.repository';
 
@@ -46,7 +46,7 @@ export default (io: Server, socket: Socket): void => {
     const meeting = await meetingRepository.findById(roomIdNormalized);
     const hostId = meeting ? meeting.hostId : undefined;
     const projectId = meeting ? (meeting as any).projectId : undefined;
-    const translation = await translationService.translate(text, sourceLang, targetLang, hostId, projectId);
+    const translation = await translationManager.translate(text, sourceLang, targetLang, hostId, projectId);
     const latency = ((Date.now() - startTime) / 1000).toFixed(2);
 
     console.log(`Translation (${targetLang}): "${translation}" [Latency: ${latency}s]`);

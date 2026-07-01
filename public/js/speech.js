@@ -8,8 +8,24 @@ export const speech = {
   recognition: null,
   isRecognitionActive: false,
   isMuted: false,
+  serverSTTActive: false,
+
+  setServerSTTActive(active) {
+    this.serverSTTActive = active;
+    if (active && this.isRecognitionActive) {
+      this.stop();
+    }
+  },
 
   init(userLang, onFinalResult, onInterimResult) {
+    // If server-side STT is active, skip client-side recognition
+    if (this.serverSTTActive) {
+      console.log('[Speech] Server-side STT is active — skipping Web Speech API.');
+      speechStatus.textContent = 'Server Transcription Active';
+      speechStatus.className = 'speech-status listening';
+      return;
+    }
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
@@ -82,7 +98,7 @@ export const speech = {
   },
 
   start() {
-    if (this.recognition && !this.isRecognitionActive && !this.isMuted) {
+    if (this.recognition && !this.isRecognitionActive && !this.isMuted && !this.serverSTTActive) {
       try {
         this.recognition.start();
       } catch (err) {

@@ -23,6 +23,8 @@ class Config {
   public readonly googleTranslateApiKey: string;
   public readonly primaryTranslationProvider: string;
   public readonly translationFallbackChain: string;
+  public readonly deepgramApiKey: string;
+  public readonly hasDeepgram: boolean;
 
   constructor() {
     this.port = this.normalizePort(process.env.PORT || '3000');
@@ -75,6 +77,15 @@ class Config {
       console.log("[Config] LiveKit Cloud is configured. Using LiveKit as primary media engine.");
     } else {
       console.log("[Config] LiveKit credentials not found. Falling back to local P2P WebRTC Mesh.");
+    }
+
+    this.deepgramApiKey = process.env.DEEPGRAM_API_KEY || '';
+    this.hasDeepgram = !!this.deepgramApiKey;
+
+    if (this.hasDeepgram) {
+      console.log('[Config] Deepgram is configured. Server-side STT enabled.');
+    } else {
+      console.log('[Config] Deepgram not configured. Falling back to client-side Web Speech API.');
     }
   }
 
