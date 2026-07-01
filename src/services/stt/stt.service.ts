@@ -9,6 +9,8 @@ export class DeepgramSTTService {
       roomId: string;
       speakerName: string;
       language: string;
+      isOpen: boolean;
+      buffer: Buffer[];
     }
   >();
 
@@ -58,6 +60,22 @@ export class DeepgramSTTService {
 
       connection.on('open', () => {
         console.log(`[STT] Deepgram connection opened for socket: ${socketId}`);
+        const session = this.sessions.get(socketId);
+        if (session) {
+          session.isOpen = true;
+          // Send all buffered chunks
+          if (session.buffer.length > 0) {
+            console.log(`[STT] Flushing ${session.buffer.length} buffered audio chunks for socket: ${socketId}`);
+            for (const chunk of session.buffer) {
+              try {
+                connection.sendMedia(chunk);
+              } catch (err) {
+                console.error(`[STT] Error sending buffered audio media for socket ${socketId}:`, err);
+              }
+            }
+            session.buffer = [];
+          }
+        }
       });
 
       connection.on('message', (data: any) => {
@@ -83,7 +101,9 @@ export class DeepgramSTTService {
         connection,
         roomId,
         speakerName,
-        language
+        language,
+        isOpen: false,
+        buffer: []
       });
     } catch (err) {
       console.error(`[STT] Error establishing Deepgram connection for socket ${socketId}:`, err);
@@ -100,13 +120,16 @@ export class DeepgramSTTService {
       return;
     }
 
-    const { connection } = session;
-    if (connection) {
+    if (session.isOpen) {
+      const { connection } = session;
       try {
         connection.sendMedia(audioChunk);
       } catch (err) {
         console.error(`[STT] Error sending audio media for socket ${socketId}:`, err);
       }
+    } else {
+      // Buffer the chunk until the socket connection is open
+      session.buffer.push(audioChunk);
     }
   }
 
