@@ -357,6 +357,10 @@ function initGlobalEvents() {
 
 async function joinRoom(roomId, name, lang) {
   if (!roomId) return;
+  
+  // Warm up and unlock AudioContext synchronously inside user gesture tick
+  audioStreamer.prepare();
+
   roomId = roomId.toLowerCase();
 
   // 1. Verify meeting status on the backend first (Zero-Trust)
