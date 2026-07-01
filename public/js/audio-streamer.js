@@ -28,25 +28,62 @@ export const audioStreamer = {
   },
 
   /**
+   * Warm up and unlock the AudioContext inside a user gesture synchronously.
+   * Call this synchronously in click/submit handlers before any async calls.
+   */
+  prepare() {
+    if (this.audioContext) return;
+    try {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      console.log('[AudioStreamer] AudioContext pre-created synchronously. State:', this.audioContext.state);
+    } catch (e) {
+      console.warn('[AudioStreamer] Failed to pre-create AudioContext:', e);
+    }
+  },
+
+  /**
    * Start capturing audio from the given MediaStream and streaming to server.
    * The MediaStream should be the SAME stream used by WebRTC.
    */
   async start(mediaStream) {
-    if (this.isStreaming || !this.socket || !mediaStream) return;
+    if (this.isStreaming || !this.socket || !mediaStream) {
+      console.warn('[AudioStreamer] Skip start: isStreaming=', this.isStreaming, 'hasSocket=', !!this.socket, 'hasStream=', !!mediaStream);
+      return;
+    }
+
+    const audioTracks = mediaStream.getAudioTracks();
+    console.log('[AudioStreamer] MediaStream audio tracks:', audioTracks);
+    if (audioTracks.length === 0) {
+      console.error('[AudioStreamer] Cannot start: No audio tracks in MediaStream!');
+      return;
+    }
 
     try {
-      // Create AudioContext (resume needed for mobile browsers)
-      this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
-        sampleRate: 48000 // Request 48kHz, AudioWorklet will downsample to 16kHz
-      });
+      // Use pre-created AudioContext, or create a new one
+      if (!this.audioContext) {
+        try {
+          this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+            sampleRate: 48000 // Request 48kHz, AudioWorklet will downsample to 16kHz
+          });
+          console.log('[AudioStreamer] AudioContext created with sampleRate option 48kHz. Active rate:', this.audioContext.sampleRate);
+        } catch (e) {
+          console.warn('[AudioStreamer] Creating AudioContext with sampleRate options failed, falling back to default:', e);
+          this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          console.log('[AudioStreamer] AudioContext created with default sampleRate:', this.audioContext.sampleRate);
+        }
+      }
 
       // Resume AudioContext (required after user gesture on mobile)
       if (this.audioContext.state === 'suspended') {
+        console.log('[AudioStreamer] AudioContext is suspended. Resuming...');
         await this.audioContext.resume();
+        console.log('[AudioStreamer] AudioContext resumed. State:', this.audioContext.state);
       }
 
       // Load the AudioWorklet processor module
+      console.log('[AudioStreamer] Loading AudioWorklet module...');
       await this.audioContext.audioWorklet.addModule('/js/audio-processor.js');
+      console.log('[AudioStreamer] AudioWorklet module loaded successfully.');
 
       // Create source from the WebRTC MediaStream
       this.sourceNode = this.audioContext.createMediaStreamSource(mediaStream);
@@ -54,9 +91,20 @@ export const audioStreamer = {
       // Create the AudioWorklet node
       this.workletNode = new AudioWorkletNode(this.audioContext, 'audio-stream-processor');
 
+      // Initialize the worklet processor with the AudioContext sampleRate
+      this.workletNode.port.postMessage({
+        type: 'init',
+        sampleRate: this.audioContext.sampleRate
+      });
+
       // Listen for processed audio chunks from the worklet
+      let chunkCount = 0;
       this.workletNode.port.onmessage = (event) => {
         if (this.isStreaming && !this.isMuted && this.socket) {
+          chunkCount++;
+          if (chunkCount === 1 || chunkCount % 100 === 0) {
+            console.log(`[AudioStreamer] Sent ${chunkCount} audio chunks to server.`);
+          }
           this.socket.emit('audio-chunk', event.data);
         }
       };
@@ -66,6 +114,7 @@ export const audioStreamer = {
       this.workletNode.connect(this.audioContext.destination);
 
       // Signal the server to start a Deepgram STT session
+      console.log('[AudioStreamer] Emitting audio-stream-start to server...');
       this.socket.emit('audio-stream-start', {
         roomId: this.roomId,
         language: this.language,

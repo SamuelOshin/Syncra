@@ -10,6 +10,14 @@ class AudioStreamProcessor extends AudioWorkletProcessor {
     this._bufferSize = 4096;
     this._buffer = new Float32Array(this._bufferSize);
     this._bytesWritten = 0;
+    this._sampleRate = 48000; // default fallback
+
+    // Listen for sample rate initialization from the main thread
+    this.port.onmessage = (event) => {
+      if (event.data && event.data.type === 'init') {
+        this._sampleRate = event.data.sampleRate;
+      }
+    };
   }
 
   /**
@@ -53,7 +61,9 @@ class AudioStreamProcessor extends AudioWorkletProcessor {
 
       // When buffer is full, downsample and send
       if (this._bytesWritten >= this._bufferSize) {
-        const downsampled = this._downsample(this._buffer, sampleRate, 16000);
+        // Fall back to global sampleRate if main-thread init has not fired yet
+        const currentRate = this._sampleRate || sampleRate || 48000;
+        const downsampled = this._downsample(this._buffer, currentRate, 16000);
         const pcm16 = this._floatTo16BitPCM(downsampled);
 
         // Transfer the buffer to main thread (zero-copy)
