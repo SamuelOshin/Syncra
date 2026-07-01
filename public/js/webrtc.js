@@ -63,6 +63,31 @@ export const webrtc = {
     }
   },
 
+  getLocalAudioStream() {
+    if (!this.activeEngine) return null;
+
+    try {
+      // P2P engine exposes localStream directly
+      if (this.activeEngine.localStream) {
+        return this.activeEngine.localStream;
+      }
+
+      // LiveKit engine: extract the audio track from the room's local participant
+      if (this.activeEngine.room) {
+        const audioTrack = this.activeEngine.room.localParticipant.getTrack(
+          window.LiveKitClient?.Track?.Source?.Microphone
+        );
+        if (audioTrack && audioTrack.track && audioTrack.track.mediaStreamTrack) {
+          return new MediaStream([audioTrack.track.mediaStreamTrack]);
+        }
+      }
+    } catch (err) {
+      console.error('[MediaFacade] Error getting local audio stream:', err);
+    }
+
+    return null;
+  },
+
   cleanup() {
     if (this.activeEngine) {
       console.log('[MediaFacade] Cleaning up active media engine...');
