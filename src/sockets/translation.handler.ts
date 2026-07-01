@@ -30,7 +30,9 @@ export default (io: Server, socket: Socket): void => {
       return;
     }
 
-    if (isTranscriptRateLimited(socket.id, roomId)) {
+    const roomIdNormalized = roomId.toLowerCase();
+
+    if (isTranscriptRateLimited(socket.id, roomIdNormalized)) {
       socket.emit('translation-rate-limited', {
         message: 'Too many transcript messages. Please wait a moment and try again.',
         errorCode: 'RATE_LIMIT_EXCEEDED',
@@ -41,7 +43,7 @@ export default (io: Server, socket: Socket): void => {
     console.log(`Transcript received from ${speakerName} (${sourceLang}): "${text}"`);
     
     const startTime = Date.now();
-    const meeting = await meetingRepository.findById(roomId);
+    const meeting = await meetingRepository.findById(roomIdNormalized);
     const hostId = meeting ? meeting.hostId : undefined;
     const projectId = meeting ? (meeting as any).projectId : undefined;
     const translation = await translationService.translate(text, sourceLang, targetLang, hostId, projectId);
@@ -59,10 +61,10 @@ export default (io: Server, socket: Socket): void => {
       latency
     };
 
-    io.to(roomId).emit('new-caption', caption);
+    io.to(roomIdNormalized).emit('new-caption', caption);
 
     meetingRepository.createTranscript({
-      meetingId: roomId,
+      meetingId: roomIdNormalized,
       speakerName,
       originalText: text,
       translatedText: translation,
@@ -70,7 +72,7 @@ export default (io: Server, socket: Socket): void => {
       targetLang,
       latency
     }).catch(err => {
-      console.error(`Failed to persist transcript segment for room ${roomId}:`, err);
+      console.error(`Failed to persist transcript segment for room ${roomIdNormalized}:`, err);
     });
   });
 

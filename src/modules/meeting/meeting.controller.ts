@@ -85,7 +85,7 @@ export class MeetingController {
 
   async getMeetingTranscript(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id.toLowerCase();
       const userId = req.user!.id;
       const pagination = parsePagination(req.query);
       const meeting = await meetingRepository.findById(id);
@@ -112,7 +112,7 @@ export class MeetingController {
 
   async verifyMeeting(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id.toLowerCase();
 
       const meeting = await meetingRepository.findById(id);
       if (!meeting) {
@@ -136,7 +136,7 @@ export class MeetingController {
 
   async endMeeting(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id.toLowerCase();
       const userId = req.user!.id;
 
       const meeting = await meetingRepository.findById(id);
