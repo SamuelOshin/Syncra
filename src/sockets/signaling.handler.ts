@@ -19,6 +19,8 @@ export default (io: Server, socket: Socket): void => {
       return;
     }
 
+    roomId = roomId.trim().toLowerCase();
+
     // Store username in socket session data
     socket.data.username = username;
     
@@ -45,7 +47,7 @@ export default (io: Server, socket: Socket): void => {
   // Forward camera toggle event
   socket.on('toggle-camera', ({ roomId, isCameraOff }: { roomId: string; isCameraOff: boolean }) => {
     if (!roomId) return;
-    socket.to(roomId).emit('peer-toggle-camera', { from: socket.id, isCameraOff });
+    socket.to(roomId.trim().toLowerCase()).emit('peer-toggle-camera', { from: socket.id, isCameraOff });
   });
 
   // WebRTC Signaling: Forward offer

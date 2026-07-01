@@ -103,8 +103,8 @@ export const api = {
     return payload;
   },
 
-  async getLiveKitToken(roomName) {
-    const res = await fetch(`/api/livekit/token?room=${encodeURIComponent(roomName)}`);
+  async getLiveKitToken(roomName, username = '') {
+    const res = await fetch(`/api/livekit/token?room=${encodeURIComponent(roomName)}&username=${encodeURIComponent(username)}`);
     const payload = await res.json();
     if (!res.ok) throw new Error(payload.message || 'Failed to fetch LiveKit token');
     return payload;

@@ -108,4 +108,62 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 }
 
+export async function optionalAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const accessToken = req.cookies['accessToken'];
+  const refreshToken = req.cookies['refreshToken'];
+
+  const clearAuthCookies = () => {
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+  };
+
+  if (accessToken) {
+    try {
+      const decoded = jwt.verify(accessToken, config.jwtAccessSecret) as AccessTokenPayload;
+      req.user = {
+        id: decoded.id,
+        name: decoded.name,
+        email: decoded.email,
+        preferredLanguage: decoded.preferredLanguage || 'en',
+      };
+      return next();
+    } catch (err: any) {
+      if (err.name !== 'TokenExpiredError') {
+        clearAuthCookies();
+        return next();
+      }
+    }
+  }
+
+  if (refreshToken) {
+    try {
+      const decodedRefresh = jwt.verify(refreshToken, config.jwtRefreshSecret) as RefreshTokenPayload;
+      const user = await userRepository.findById(decodedRefresh.id);
+      if (user && user.tokenVersion === decodedRefresh.tokenVersion) {
+        const newAccessToken = jwt.sign(
+          { id: user.id, name: user.name, email: user.email, preferredLanguage: user.preferredLanguage || 'en' },
+          config.jwtAccessSecret,
+          { expiresIn: config.jwtAccessExpiresIn as any }
+        );
+        res.cookie('accessToken', newAccessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 15 * 60 * 1000,
+        });
+        req.user = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          preferredLanguage: user.preferredLanguage || 'en',
+        };
+      }
+    } catch (err) {
+      clearAuthCookies();
+    }
+  }
+
+  return next();
+}
+
 export default requireAuth;

@@ -117,8 +117,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 function getRoomIdFromUrl() {
-  const match = window.location.pathname.match(/\/meet\/([a-z]{3}-[a-z]{4}-[a-z]{3})/);
-  return match ? match[1] : null;
+  const match = window.location.pathname.match(/\/meet\/([a-zA-Z]{3}-[a-zA-Z]{4}-[a-zA-Z]{3})/);
+  return match ? match[1].toLowerCase() : null;
 }
 
 function showScreen(screen) {
@@ -355,6 +355,9 @@ function initGlobalEvents() {
 // ==========================================
 
 async function joinRoom(roomId, name, lang) {
+  if (!roomId) return;
+  roomId = roomId.toLowerCase();
+
   // 1. Verify meeting status on the backend first (Zero-Trust)
   try {
     const payload = await api.verifyMeeting(roomId);

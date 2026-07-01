@@ -25,7 +25,7 @@ export const LiveKitEngine = {
     // 2. Fetch LiveKit Token from backend
     let token, url;
     try {
-      const response = await api.getLiveKitToken(roomId);
+      const response = await api.getLiveKitToken(roomId, username);
       token = response.data.token;
       url = response.data.url;
     } catch (err) {
