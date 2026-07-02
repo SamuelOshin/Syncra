@@ -36,6 +36,8 @@ export class DeepgramSTTService {
         return reject(new Error('WebSocket is already CLOSED.'));
       }
 
+      let timeout: NodeJS.Timeout;
+
       const cleanUp = () => {
         clearTimeout(timeout);
         try {
