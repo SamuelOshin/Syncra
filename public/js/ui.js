@@ -160,6 +160,42 @@ export const ui = {
     const parts = name.trim().split(/\s+/);
     if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
     return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  },
+
+  showInputError(inputElement, errorMessage) {
+    if (!inputElement) return;
+    const inputGroup = inputElement.closest('.input-group');
+    if (!inputGroup) return;
+
+    this.clearInputError(inputElement);
+
+    const errorEl = document.createElement('span');
+    errorEl.className = 'validation-error-label';
+    errorEl.textContent = errorMessage;
+
+    inputGroup.appendChild(errorEl);
+    inputElement.classList.add('error');
+  },
+
+  clearInputError(inputElement) {
+    if (!inputElement) return;
+    const inputGroup = inputElement.closest('.input-group');
+    if (!inputGroup) return;
+
+    const errorEl = inputGroup.querySelector('.validation-error-label');
+    if (errorEl) {
+      errorEl.remove();
+    }
+    inputElement.classList.remove('error');
+  },
+
+  clearFormErrors(formElement) {
+    if (!formElement) return;
+    const errorLabels = formElement.querySelectorAll('.validation-error-label');
+    errorLabels.forEach(el => el.remove());
+
+    const errorInputs = formElement.querySelectorAll('input.error, select.error');
+    errorInputs.forEach(input => input.classList.remove('error'));
   }
 };
 export default ui;

@@ -20,11 +20,13 @@
     "express": "^4.19.2",
     "express-rate-limit": "^8.5.2",
     "express-session": "^1.19.0",
+    "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
     "livekit": "^0.0.1",
     "livekit-server-sdk": "^2.15.5",
     "pg": "^8.22.0",
     "socket.io": "^4.7.5",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -36,6 +38,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.12.7",
     "@types/pg": "^8.20.0",
+    "@types/swagger-ui-express": "^4.1.8",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.7.2",
     "typescript": "^5.4.5"

@@ -17,7 +17,13 @@ export async function initializeDatabase() {
           email VARCHAR(150) UNIQUE NOT NULL,
           password VARCHAR(255) NOT NULL,
           token_version INT DEFAULT 1 NOT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          reset_password_token VARCHAR(255),
+          reset_password_expires_at TIMESTAMP,
+          failed_attempts INT DEFAULT 0 NOT NULL,
+          locked_until TIMESTAMP,
+          email_verified BOOLEAN DEFAULT FALSE NOT NULL,
+          verification_token VARCHAR(255)
         );
       `);
 
@@ -97,6 +103,13 @@ export async function initializeDatabase() {
       await dbClient.execute(sql`ALTER TABLE meeting_transcripts ADD COLUMN IF NOT EXISTS latency VARCHAR(10);`);
       await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INT DEFAULT 1 NOT NULL;`);
       await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_language VARCHAR(10) DEFAULT 'en' NOT NULL;`);
+      await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_token VARCHAR(255);`);
+      await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_expires_at TIMESTAMP;`);
+      await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_attempts INT DEFAULT 0 NOT NULL;`);
+      await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP;`);
+      await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE NOT NULL;`);
+      await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255);`);
+      await dbClient.execute(sql`UPDATE users SET email_verified = TRUE WHERE email_verified IS NULL;`);
 
       await dbClient.execute(sql`
         CREATE TABLE IF NOT EXISTS chats (
@@ -172,7 +185,13 @@ export async function initializeDatabase() {
           email TEXT UNIQUE NOT NULL,
           password TEXT NOT NULL,
           token_version INTEGER DEFAULT 1 NOT NULL,
-          created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          reset_password_token TEXT,
+          reset_password_expires_at TEXT,
+          failed_attempts INTEGER DEFAULT 0 NOT NULL,
+          locked_until TEXT,
+          email_verified INTEGER DEFAULT 0 NOT NULL,
+          verification_token TEXT
         );
 
         CREATE TABLE IF NOT EXISTS meetings (
@@ -241,6 +260,13 @@ export async function initializeDatabase() {
       try { sqliteDb.exec(`ALTER TABLE meeting_transcripts ADD COLUMN latency TEXT;`); } catch (e) {}
       try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1 NOT NULL;`); } catch (e) {}
       try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN preferred_language TEXT DEFAULT 'en' NOT NULL;`); } catch (e) {}
+      try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN reset_password_token TEXT;`); } catch (e) {}
+      try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN reset_password_expires_at TEXT;`); } catch (e) {}
+      try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN failed_attempts INTEGER DEFAULT 0 NOT NULL;`); } catch (e) {}
+      try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN locked_until TEXT;`); } catch (e) {}
+      try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0 NOT NULL;`); } catch (e) {}
+      try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN verification_token TEXT;`); } catch (e) {}
+      try { sqliteDb.exec(`UPDATE users SET email_verified = 1 WHERE email_verified IS NULL OR email_verified = 0;`); } catch (e) {}
 
       sqliteDb.exec(`
         CREATE TABLE IF NOT EXISTS chats (

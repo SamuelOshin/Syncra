@@ -19,7 +19,14 @@ export class AuthController {
       // Check if email already exists
       const existingUser = await userRepository.findByEmail(email.toLowerCase());
       if (existingUser) {
-        next(new ConflictError('Email is already registered', 'EMAIL_ALREADY_REGISTERED'));
+        // Return a generic success response to prevent user enumeration
+        successResponse(res, 201, 'Registration successful. Please check your email to verify your account.', {
+          user: {
+            id: 'generic-id',
+            name,
+            email: email.toLowerCase(),
+          }
+        });
         return;
       }
 
@@ -27,7 +34,8 @@ export class AuthController {
       const hashedPassword = await bcrypt.hash(password, 10);
       
       // Generate UUID (standard RFC4122 v4)
-      const userId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+      const userId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
+      const verificationToken = crypto.randomBytes(32).toString('hex');
 
       const newUser: User = {
         id: userId,
@@ -35,11 +43,16 @@ export class AuthController {
         email: email.toLowerCase(),
         password: hashedPassword,
         tokenVersion: 1,
+        emailVerified: false,
+        verificationToken,
       };
 
       await userRepository.create(newUser);
 
-      successResponse(res, 201, 'User registered successfully', {
+      // Simulate sending email by logging in console
+      console.log(`[Email Service] Verification link for ${newUser.email}: http://localhost:${config.port}/api/auth/verify-email?token=${verificationToken}`);
+
+      successResponse(res, 201, 'Registration successful. Please check your email to verify your account.', {
         user: {
           id: newUser.id,
           name: newUser.name,
@@ -57,23 +70,57 @@ export class AuthController {
       const { email, password } = req.body;
 
       const user = await userRepository.findByEmail(email.toLowerCase());
+
+      // 1. Account Lockout Check
+      if (user && user.lockedUntil) {
+        const lockTime = new Date(user.lockedUntil).getTime();
+        if (lockTime > Date.now()) {
+          const waitMinutes = Math.ceil((lockTime - Date.now()) / 60000);
+          next(new UnauthorizedError(`Account is temporarily locked due to too many failed attempts. Please wait ${waitMinutes} minutes.`, 'ACCOUNT_LOCKED'));
+          return;
+        }
+      }
+
       if (!user || !user.password) {
         next(new UnauthorizedError('Invalid email or password', 'INVALID_CREDENTIALS'));
         return;
       }
 
-      // Compare password hash (async)
+      // 2. Email Verification Check
+      if (!user.emailVerified) {
+        next(new UnauthorizedError('Please verify your email address before signing in', 'EMAIL_NOT_VERIFIED'));
+        return;
+      }
+
+      // 3. Compare password hash (async)
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
+        const failedAttempts = (user.failedAttempts ?? 0) + 1;
+        const updateData: Partial<User> = { failedAttempts };
+        
+        if (failedAttempts >= 5) {
+          updateData.lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes lockout
+          updateData.failedAttempts = 0; // Reset counter for next cycle
+          await userRepository.update(user.id, updateData);
+          next(new UnauthorizedError('Too many failed attempts. Account locked for 15 minutes.', 'ACCOUNT_LOCKED'));
+          return;
+        }
+        
+        await userRepository.update(user.id, updateData);
         next(new UnauthorizedError('Invalid email or password', 'INVALID_CREDENTIALS'));
         return;
       }
 
+      // 4. Reset failed attempts counter on success
+      if (user.failedAttempts && user.failedAttempts > 0) {
+        await userRepository.update(user.id, { failedAttempts: 0, lockedUntil: null });
+      }
+
       const tokenVersion = user.tokenVersion ?? 1;
 
-      // Generate Access Token (15 minutes)
+      // Generate Access Token (15 minutes) - Contains ONLY user ID to eliminate PII leak risk
       const accessToken = jwt.sign(
-        { id: user.id, name: user.name, email: user.email, preferredLanguage: user.preferredLanguage || 'en' },
+        { id: user.id },
         config.jwtAccessSecret,
         { expiresIn: config.jwtAccessExpiresIn as any }
       );
@@ -122,8 +169,14 @@ export class AuthController {
         await userRepository.incrementTokenVersion(req.user.id);
       }
       
-      res.clearCookie('accessToken');
-      res.clearCookie('refreshToken');
+      const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax' as const,
+      };
+      
+      res.clearCookie('accessToken', cookieOptions);
+      res.clearCookie('refreshToken', cookieOptions);
       
       successResponse(res, 200, 'Logout successful');
     } catch (error) {
@@ -174,31 +227,41 @@ export class AuthController {
   async handleOAuthCallback(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const provider = req.path.includes('google') ? 'Google' : 'Microsoft';
+      const hasClientId = provider === 'Google' ? !!process.env.GOOGLE_CLIENT_ID : !!process.env.MICROSOFT_CLIENT_ID;
       const { code } = req.query;
 
       if (code === 'mock-sandbox-code') {
+        // CLOSE BACKDOOR: Reject sandbox code in production or if oauth credentials are present
+        if (process.env.NODE_ENV === 'production' || hasClientId) {
+          next(new ForbiddenError('OAuth Sandbox Mode is disabled.', 'OAUTH_SANDBOX_DISABLED'));
+          return;
+        }
+
         // Sandbox Login
         const mockEmail = `john.doe@${provider.toLowerCase()}-sandbox.com`;
         let user = await userRepository.findByEmail(mockEmail);
 
         if (!user) {
           // Create sandbox user
-          const userId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+          const userId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
+          // Hash simulated OAuth password
+          const hashedPassword = await bcrypt.hash('oauth-sandbox-dummy-password', 10);
           user = {
             id: userId,
             name: `John Doe (${provider})`,
             email: mockEmail,
-            password: 'oauth-sandbox-dummy-password',
+            password: hashedPassword,
             tokenVersion: 1,
+            emailVerified: true, // Sandbox accounts are verified by default
           };
           await userRepository.create(user);
         }
 
         const tokenVersion = user.tokenVersion ?? 1;
 
-        // Generate Access Token (15 minutes)
+        // Generate Access Token (15 minutes) - ONLY user ID payload
         const accessToken = jwt.sign(
-          { id: user.id, name: user.name, email: user.email, preferredLanguage: user.preferredLanguage || 'en' },
+          { id: user.id },
           config.jwtAccessSecret,
           { expiresIn: config.jwtAccessExpiresIn as any }
         );
@@ -210,19 +273,21 @@ export class AuthController {
           { expiresIn: config.jwtRefreshExpiresIn as any }
         );
 
-        // Set Access Token Cookie
-        res.cookie('accessToken', accessToken, {
+        const cookieOptions = {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
+          sameSite: 'lax' as const,
+        };
+
+        // Set Access Token Cookie
+        res.cookie('accessToken', accessToken, {
+          ...cookieOptions,
           maxAge: 15 * 60 * 1000,
         });
 
         // Set Refresh Token Cookie
         res.cookie('refreshToken', refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
+          ...cookieOptions,
           maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
@@ -262,9 +327,9 @@ export class AuthController {
         preferredLanguage: preferredLanguage || 'en',
       });
 
-      // Issue a new Access Token with updated name/email
+      // Issue a new Access Token with ONLY the user ID
       const accessToken = jwt.sign(
-        { id: userId, name, email: email.toLowerCase(), preferredLanguage: preferredLanguage || 'en' },
+        { id: userId },
         config.jwtAccessSecret,
         { expiresIn: config.jwtAccessExpiresIn as any }
       );
@@ -339,6 +404,115 @@ export class AuthController {
       });
 
       successResponse(res, 200, 'Password updated successfully. Other devices have been logged out.');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // GET /api/auth/verify-email
+  async verifyEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { token } = req.query;
+      const user = await userRepository.findByVerificationToken(token as string);
+      if (!user) {
+        next(new BadRequestError('Invalid or expired verification token', 'INVALID_VERIFICATION_TOKEN'));
+        return;
+      }
+      
+      await userRepository.update(user.id, {
+        emailVerified: true,
+        verificationToken: null,
+      });
+      
+      res.redirect('/?verified=true');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // POST /api/auth/verify-email/resend
+  async resendVerification(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { email } = req.body;
+      const user = await userRepository.findByEmail(email.toLowerCase());
+      if (!user) {
+        // Return a generic success to prevent user enumeration
+        successResponse(res, 200, 'If this email is registered, a new verification link has been sent.');
+        return;
+      }
+      
+      if (user.emailVerified) {
+        next(new BadRequestError('Email is already verified', 'EMAIL_ALREADY_VERIFIED'));
+        return;
+      }
+      
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      await userRepository.update(user.id, { verificationToken });
+      
+      console.log(`[Email Service] Resending verification link for ${user.email}: http://localhost:${config.port}/api/auth/verify-email?token=${verificationToken}`);
+      
+      successResponse(res, 200, 'If this email is registered, a new verification link has been sent.');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // POST /api/auth/forgot-password
+  async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { email } = req.body;
+      const user = await userRepository.findByEmail(email.toLowerCase());
+      if (!user) {
+        // Generic success message to prevent user enumeration
+        successResponse(res, 200, 'If this email exists, a password reset link has been sent.');
+        return;
+      }
+      
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+      
+      await userRepository.update(user.id, {
+        resetPasswordToken: resetToken,
+        resetPasswordExpiresAt: resetExpires,
+      });
+      
+      console.log(`[Email Service] Password reset link for ${user.email}: http://localhost:${config.port}/#reset-password?token=${resetToken}`);
+      
+      successResponse(res, 200, 'If this email exists, a password reset link has been sent.');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // POST /api/auth/reset-password
+  async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { token, password } = req.body;
+      const user = await userRepository.findByResetToken(token);
+      if (!user || !user.resetPasswordExpiresAt) {
+        next(new BadRequestError('Invalid or expired reset token', 'INVALID_RESET_TOKEN'));
+        return;
+      }
+      
+      const expiryTime = new Date(user.resetPasswordExpiresAt).getTime();
+      if (expiryTime < Date.now()) {
+        next(new BadRequestError('Password reset token has expired', 'EXPIRED_RESET_TOKEN'));
+        return;
+      }
+      
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newTokenVersion = (user.tokenVersion ?? 1) + 1;
+      
+      await userRepository.update(user.id, {
+        password: hashedPassword,
+        tokenVersion: newTokenVersion,
+        resetPasswordToken: null,
+        resetPasswordExpiresAt: null,
+        failedAttempts: 0,
+        lockedUntil: null,
+      });
+      
+      successResponse(res, 200, 'Password has been reset successfully. You can now sign in.');
     } catch (error) {
       next(error);
     }
