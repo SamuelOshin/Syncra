@@ -41,9 +41,18 @@ export const P2PEngine = {
       const cameraDeviceId = localStorage.getItem('syncra_preferred_camera_id');
       const micDeviceId = localStorage.getItem('syncra_preferred_mic_id');
 
+      const audioConstraints = {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      };
+      if (micDeviceId) {
+        audioConstraints.deviceId = { exact: micDeviceId };
+      }
+
       const constraints = {
         video: cameraDeviceId ? { deviceId: { exact: cameraDeviceId } } : true,
-        audio: micDeviceId ? { deviceId: { exact: micDeviceId } } : true
+        audio: audioConstraints
       };
 
       this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -58,7 +67,14 @@ export const P2PEngine = {
     } catch (err) {
       console.warn('[P2PEngine] Error accessing media with saved constraints, falling back to defaults:', err);
       try {
-        this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        this.localStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
         const localVideo = document.getElementById('local-video');
         if (localVideo) localVideo.srcObject = this.localStream;
         const localVoiceIndicator = document.getElementById('local-voice-indicator');
@@ -370,9 +386,17 @@ export const P2PEngine = {
   async switchDevice(type, deviceId) {
     if (!this.localStream) return;
 
-    const constraints = {
-      [type === 'video' ? 'video' : 'audio']: { deviceId: { exact: deviceId } }
-    };
+    const constraints = {};
+    if (type === 'video') {
+      constraints.video = { deviceId: { exact: deviceId } };
+    } else {
+      constraints.audio = {
+        deviceId: { exact: deviceId },
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      };
+    }
 
     try {
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);

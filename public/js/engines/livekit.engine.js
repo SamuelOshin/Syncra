@@ -98,7 +98,16 @@ export const LiveKitEngine = {
       // Enable local tracks with saved constraints
       await this.room.localParticipant.enableCameraAndMicrophone({
         video: cameraDeviceId ? { deviceId: { exact: cameraDeviceId } } : true,
-        audio: micDeviceId ? { deviceId: { exact: micDeviceId } } : true
+        audio: micDeviceId ? { 
+          deviceId: { exact: micDeviceId },
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } : {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
       });
 
       // Attach local video to UI
@@ -264,7 +273,12 @@ export const LiveKitEngine = {
         }
       } else {
         await this.room.localParticipant.setMicrophoneEnabled(false);
-        await this.room.localParticipant.setMicrophoneEnabled(true, { deviceId });
+        await this.room.localParticipant.setMicrophoneEnabled(true, { 
+          deviceId,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        });
 
         // Re-attach local audio visualizer
         const localVoiceIndicator = document.getElementById('local-voice-indicator');
