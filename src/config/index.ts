@@ -84,8 +84,30 @@ class Config {
 
     if (this.hasDeepgram) {
       console.log('[Config] Deepgram is configured. Server-side STT enabled.');
+      this.validateDeepgramKey();
     } else {
       console.log('[Config] Deepgram not configured. Falling back to client-side Web Speech API.');
+    }
+  }
+
+  private async validateDeepgramKey(): Promise<void> {
+    try {
+      const response = await fetch('https://api.deepgram.com/v1/projects', {
+        headers: {
+          'Authorization': `Token ${this.deepgramApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data: any = await response.json();
+        const projectNames = data.projects?.map((p: any) => p.name).join(', ') || 'None';
+        console.log(`[Config] Deepgram API key is VALID. Access to projects: [${projectNames}]`);
+      } else {
+        const text = await response.text();
+        console.error(`[Config] Deepgram API key is INVALID. Status: ${response.status}. Error: ${text}`);
+      }
+    } catch (err: any) {
+      console.error(`[Config] Deepgram API key verification failed network check: ${err.message || err}`);
     }
   }
 
