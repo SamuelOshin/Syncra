@@ -171,7 +171,14 @@ export const settings = {
 
     try {
       // Prompt for temporary permission to enumerate devices
-      await navigator.mediaDevices.getUserMedia({ audio: true, video: true }).catch(() => {});
+      await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          echoCancellation: true, 
+          noiseSuppression: true, 
+          autoGainControl: true 
+        }, 
+        video: true 
+      }).catch(() => {});
       
       const devices = await navigator.mediaDevices.enumerateDevices();
       
