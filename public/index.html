@@ -49,86 +49,228 @@
     
     <!-- 1. AUTH SCREEN (Login / Signup) -->
     <div id="auth-screen" class="screen">
-      <div class="glass-card auth-card">
-        <div class="logo-area">
-          <div class="logo-icon">
+      <div class="auth-container">
+        <!-- Left Panel: Forms & SSO -->
+        <div class="auth-form-panel">
+          <!-- Brand Logo Header -->
+          <div class="auth-brand">
             <i data-lucide="aperture"></i>
+            <span>Syncra</span>
           </div>
-          <h1>Syncra</h1>
-          <p class="subtitle">Enterprise Real-Time Translation Platform</p>
+
+          <!-- Hidden Auth Tabs for JS compatibility -->
+          <div class="auth-tabs" id="auth-tabs-container" style="display: none !important;">
+            <button id="tab-signin" class="auth-tab active">Sign In</button>
+            <button id="tab-signup" class="auth-tab">Sign Up</button>
+          </div>
+
+          <!-- Forms Wrapper -->
+          <div class="auth-forms-wrapper">
+            <!-- Sign In Form -->
+            <form id="signin-form" class="auth-form active">
+              <div class="auth-header">
+                <h2>Sign in to Syncra</h2>
+                <p>One solution for all your real-time translation needs</p>
+              </div>
+              
+              <div class="input-group">
+                <label for="signin-email">Email Address</label>
+                <div class="input-wrapper">
+                  <i data-lucide="mail"></i>
+                  <input type="email" id="signin-email" placeholder="you@company.com" required autocomplete="email">
+                </div>
+              </div>
+              
+              <div class="input-group">
+                <div class="label-header">
+                  <label for="signin-password">Password</label>
+                </div>
+                <div class="input-wrapper">
+                  <i data-lucide="lock"></i>
+                  <input type="password" id="signin-password" placeholder="••••••••" required autocomplete="current-password">
+                  <button type="button" class="btn-toggle-password" tabindex="-1">
+                    <i data-lucide="eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Remember Me & Forgot Password in one line -->
+              <div class="auth-options">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="signin-remember">
+                  <span>Remember me</span>
+                </label>
+                <a href="#" id="link-forgot-password" class="auth-link">Forgot Password?</a>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
+                <span>Sign In</span>
+                <i data-lucide="log-in"></i>
+              </button>
+
+              <div class="auth-footer-text">
+                Don't have an account? <a href="#" id="link-goto-signup" class="auth-link">Sign Up</a>
+              </div>
+            </form>
+
+            <!-- Sign Up Form -->
+            <form id="signup-form" class="auth-form">
+              <div class="auth-header">
+                <h2>Create an Account</h2>
+                <p>Start translating and collaborating in real-time</p>
+              </div>
+
+              <div class="input-group">
+                <label for="signup-name">Full Name</label>
+                <div class="input-wrapper">
+                  <i data-lucide="user"></i>
+                  <input type="text" id="signup-name" placeholder="John Doe" required autocomplete="name">
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="signup-email">Email Address</label>
+                <div class="input-wrapper">
+                  <i data-lucide="mail"></i>
+                  <input type="email" id="signup-email" placeholder="you@company.com" required autocomplete="email">
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="signup-password">Password</label>
+                <div class="input-wrapper">
+                  <i data-lucide="lock"></i>
+                  <input type="password" id="signup-password" placeholder="At least 8 characters (1 uppercase, 1 number, 1 symbol)" required autocomplete="new-password">
+                  <button type="button" class="btn-toggle-password" tabindex="-1">
+                    <i data-lucide="eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="signup-confirm-password">Confirm Password</label>
+                <div class="input-wrapper">
+                  <i data-lucide="lock"></i>
+                  <input type="password" id="signup-confirm-password" placeholder="Confirm your password" required autocomplete="new-password">
+                  <button type="button" class="btn-toggle-password" tabindex="-1">
+                    <i data-lucide="eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
+                <span>Create Account</span>
+                <i data-lucide="user-plus"></i>
+              </button>
+
+              <div class="auth-footer-text">
+                Already have an account? <a href="#" id="link-goto-signin" class="auth-link">Sign In</a>
+              </div>
+            </form>
+
+            <!-- Forgot Password Form (Hidden by default) -->
+            <form id="forgot-password-form" class="auth-form">
+              <div class="auth-header">
+                <h2>Forgot Password?</h2>
+                <p>Enter your email address and we'll send you a password reset link.</p>
+              </div>
+
+              <div class="input-group">
+                <label for="forgot-email">Email Address</label>
+                <div class="input-wrapper">
+                  <i data-lucide="mail"></i>
+                  <input type="email" id="forgot-email" placeholder="you@company.com" required>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
+                <span>Send Reset Link</span>
+                <i data-lucide="send"></i>
+              </button>
+
+              <div class="auth-footer-text">
+                <a href="#" id="link-back-to-signin" class="auth-link">Back to Sign In</a>
+              </div>
+            </form>
+
+            <!-- Reset Password Form (Hidden by default) -->
+            <form id="reset-password-form" class="auth-form">
+              <input type="hidden" id="reset-token">
+              <div class="auth-header">
+                <h2>Reset Password</h2>
+                <p>Choose a strong new password for your account recovery.</p>
+              </div>
+
+              <div class="input-group">
+                <label for="reset-password">New Password</label>
+                <div class="input-wrapper">
+                  <i data-lucide="lock"></i>
+                  <input type="password" id="reset-password" placeholder="At least 8 characters (1 uppercase, 1 number, 1 symbol)" required autocomplete="new-password">
+                  <button type="button" class="btn-toggle-password" tabindex="-1">
+                    <i data-lucide="eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="reset-confirm-password">Confirm New Password</label>
+                <div class="input-wrapper">
+                  <i data-lucide="lock"></i>
+                  <input type="password" id="reset-confirm-password" placeholder="Confirm new password" required autocomplete="new-password">
+                  <button type="button" class="btn-toggle-password" tabindex="-1">
+                    <i data-lucide="eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
+                <span>Reset Password</span>
+                <i data-lucide="check"></i>
+              </button>
+
+              <div class="auth-footer-text">
+                <a href="#" id="link-reset-to-signin" class="auth-link">Cancel & Back to Sign In</a>
+              </div>
+            </form>
+          </div>
+
+          <!-- SSO Buttons Section -->
+          <div class="auth-sso-section">
+            <div class="divider" id="auth-divider-sso">
+              <span>or continue with</span>
+            </div>
+
+            <div class="sso-buttons" id="auth-sso-container">
+              <a href="/api/auth/google" class="btn btn-secondary btn-sso">
+                <i data-lucide="chrome"></i>
+                <span>Google</span>
+              </a>
+              <a href="/api/auth/microsoft" class="btn btn-secondary btn-sso">
+                <i data-lucide="terminal"></i>
+                <span>Microsoft</span>
+              </a>
+            </div>
+          </div>
         </div>
 
-        <!-- Auth Tabs -->
-        <div class="auth-tabs">
-          <button id="tab-signin" class="auth-tab active">Sign In</button>
-          <button id="tab-signup" class="auth-tab">Sign Up</button>
-        </div>
-        
-        <!-- Sign In Form -->
-        <form id="signin-form" class="auth-form active">
-          <div class="input-group">
-            <label for="signin-email">Email Address</label>
-            <div class="input-wrapper">
-              <i data-lucide="mail"></i>
-              <input type="email" id="signin-email" placeholder="you@company.com" required autocomplete="email">
+        <!-- Right Panel: Showcase (Desktop Only) -->
+        <div class="auth-showcase-panel">
+          <div class="showcase-content">
+            <div class="showcase-card">
+              <img src="/auth_showcase.png" alt="Syncra Workspace Mockup">
+            </div>
+            
+            <div class="showcase-text">
+              <h3>Comprehensive Translation for Enterprise</h3>
+              <p>Syncra bridges communication gaps in real-time, offering instant voice translation, live WebRTC meetings, and team chat spaces with zero friction.</p>
+            </div>
+            
+            <div class="showcase-indicator">
+              <span class="dot active"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
             </div>
           </div>
-          <div class="input-group">
-            <label for="signin-password">Password</label>
-            <div class="input-wrapper">
-              <i data-lucide="lock"></i>
-              <input type="password" id="signin-password" placeholder="••••••••" required autocomplete="current-password">
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary btn-block">
-            <span>Sign In</span>
-            <i data-lucide="log-in"></i>
-          </button>
-        </form>
-
-        <!-- Sign Up Form -->
-        <form id="signup-form" class="auth-form">
-          <div class="input-group">
-            <label for="signup-name">Full Name</label>
-            <div class="input-wrapper">
-              <i data-lucide="user"></i>
-              <input type="text" id="signup-name" placeholder="John Doe" required autocomplete="name">
-            </div>
-          </div>
-          <div class="input-group">
-            <label for="signup-email">Email Address</label>
-            <div class="input-wrapper">
-              <i data-lucide="mail"></i>
-              <input type="email" id="signup-email" placeholder="you@company.com" required autocomplete="email">
-            </div>
-          </div>
-          <div class="input-group">
-            <label for="signup-password">Password</label>
-            <div class="input-wrapper">
-              <i data-lucide="lock"></i>
-              <input type="password" id="signup-password" placeholder="At least 8 characters" required autocomplete="new-password">
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary btn-block">
-            <span>Create Account</span>
-            <i data-lucide="user-plus"></i>
-          </button>
-        </form>
-
-        <div class="divider">
-          <span>or continue with</span>
-        </div>
-
-        <!-- SSO Buttons -->
-        <div class="sso-buttons">
-          <a href="/api/auth/google" class="btn btn-secondary btn-sso">
-            <i data-lucide="chrome"></i>
-            <span>Google</span>
-          </a>
-          <a href="/api/auth/microsoft" class="btn btn-secondary btn-sso">
-            <i data-lucide="terminal"></i>
-            <span>Microsoft</span>
-          </a>
         </div>
       </div>
     </div>
@@ -951,14 +1093,31 @@
                           <div class="input-wrapper">
                             <i data-lucide="lock"></i>
                             <input type="password" id="security-current-password" placeholder="••••••••" required autocomplete="current-password">
+                            <button type="button" class="btn-toggle-password" tabindex="-1">
+                              <i data-lucide="eye"></i>
+                            </button>
                           </div>
                         </div>
 
                         <div class="input-group">
                           <label for="security-new-password">New Password</label>
                           <div class="input-wrapper">
-                            <i data-lucide="key-round"></i>
-                            <input type="password" id="security-new-password" placeholder="At least 8 characters" required autocomplete="new-password">
+                            <i data-lucide="lock"></i>
+                            <input type="password" id="security-new-password" placeholder="At least 8 characters (1 uppercase, 1 number, 1 symbol)" required autocomplete="new-password">
+                            <button type="button" class="btn-toggle-password" tabindex="-1">
+                              <i data-lucide="eye"></i>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div class="input-group">
+                          <label for="security-confirm-password">Confirm New Password</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="lock"></i>
+                            <input type="password" id="security-confirm-password" placeholder="Confirm new password" required autocomplete="new-password">
+                            <button type="button" class="btn-toggle-password" tabindex="-1">
+                              <i data-lucide="eye"></i>
+                            </button>
                           </div>
                         </div>
                         

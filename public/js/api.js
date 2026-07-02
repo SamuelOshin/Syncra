@@ -16,18 +16,26 @@ export const api = {
       body: JSON.stringify({ email, password })
     });
     const payload = await res.json();
-    if (!res.ok) throw new Error(payload.message || 'Sign in failed');
+    if (!res.ok) {
+      const err = new Error(payload.message || 'Sign in failed');
+      (err as any).payload = payload;
+      throw err;
+    }
     return payload;
   },
 
-  async signUp(name, email, password) {
+  async signUp(name, email, password, confirmPassword) {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
+      body: JSON.stringify({ name, email, password, confirmPassword })
     });
     const payload = await res.json();
-    if (!res.ok) throw new Error(payload.message || 'Sign up failed');
+    if (!res.ok) {
+      const err = new Error(payload.message || 'Sign up failed');
+      (err as any).payload = payload;
+      throw err;
+    }
     return payload;
   },
 
@@ -214,6 +222,51 @@ export const api = {
     const res = await fetch(`/api/chat/${chatId}/read`, { method: 'POST' });
     const payload = await res.json();
     if (!res.ok) throw new Error(payload.message || 'Failed to mark chat as read');
+    return payload;
+  },
+
+  async forgotPassword(email) {
+    const res = await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      const err = new Error(payload.message || 'Forgot password request failed');
+      (err as any).payload = payload;
+      throw err;
+    }
+    return payload;
+  },
+
+  async resetPassword(token, password, confirmPassword) {
+    const res = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password, confirmPassword })
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      const err = new Error(payload.message || 'Reset password request failed');
+      (err as any).payload = payload;
+      throw err;
+    }
+    return payload;
+  },
+
+  async resendVerification(email) {
+    const res = await fetch('/api/auth/verify-email/resend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      const err = new Error(payload.message || 'Resend verification request failed');
+      (err as any).payload = payload;
+      throw err;
+    }
     return payload;
   }
 };

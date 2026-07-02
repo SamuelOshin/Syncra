@@ -1,8 +1,17 @@
 import { Router } from 'express';
 import { AuthController } from './auth.controller';
 import { validate } from '../../middleware/validate.middleware';
-import { signUpSchema, signInSchema, updateProfileSchema, updatePasswordSchema } from './auth.schema';
-import { authLimiter } from '../../middleware/rate-limit.middleware';
+import { 
+  signUpSchema, 
+  signInSchema, 
+  updateProfileSchema, 
+  updatePasswordSchema, 
+  forgotPasswordSchema, 
+  resetPasswordSchema, 
+  verifyEmailSchema,
+  resendVerificationSchema
+} from './auth.schema';
+import { authLimiter, publicVerifyLimiter } from '../../middleware/rate-limit.middleware';
 import { requireAuth } from '../../middleware/auth.middleware';
 
 const router = Router();
@@ -15,6 +24,11 @@ router.get('/me', requireAuth, (req, res, next) => authController.me(req, res, n
 
 router.put('/profile', requireAuth, validate(updateProfileSchema), (req, res, next) => authController.updateProfile(req, res, next));
 router.put('/password', requireAuth, validate(updatePasswordSchema), (req, res, next) => authController.updatePassword(req, res, next));
+
+router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), (req, res, next) => authController.forgotPassword(req, res, next));
+router.post('/reset-password', authLimiter, validate(resetPasswordSchema), (req, res, next) => authController.resetPassword(req, res, next));
+router.get('/verify-email', publicVerifyLimiter, validate(verifyEmailSchema), (req, res, next) => authController.verifyEmail(req, res, next));
+router.post('/verify-email/resend', authLimiter, validate(resendVerificationSchema), (req, res, next) => authController.resendVerification(req, res, next));
 
 router.get('/google', authLimiter, (req, res, next) => authController.handleOAuthRedirect(req, res, next));
 router.get('/google/callback', authLimiter, (req, res, next) => authController.handleOAuthCallback(req, res, next));

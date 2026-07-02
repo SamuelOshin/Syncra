@@ -8,9 +8,6 @@ const userRepository = new UserRepository();
 
 interface AccessTokenPayload {
   id: string;
-  name: string;
-  email: string;
-  preferredLanguage?: string;
 }
 
 interface RefreshTokenPayload {
@@ -35,21 +32,32 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   const accessToken = req.cookies['accessToken'];
   const refreshToken = req.cookies['refreshToken'];
 
-  // Helper to clear cookies on auth failure
+  // Helper to clear cookies on auth failure (must match original cookie options)
   const clearAuthCookies = () => {
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax' as const,
+    };
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
   };
 
   // 1. Try to verify the Access Token
   if (accessToken) {
     try {
       const decoded = jwt.verify(accessToken, config.jwtAccessSecret) as AccessTokenPayload;
+      const user = await userRepository.findById(decoded.id);
+      if (!user) {
+        clearAuthCookies();
+        return next(new UnauthorizedError('User not found', 'USER_NOT_FOUND'));
+      }
+      
       req.user = {
-        id: decoded.id,
-        name: decoded.name,
-        email: decoded.email,
-        preferredLanguage: decoded.preferredLanguage || 'en',
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        preferredLanguage: user.preferredLanguage || 'en',
       };
       return next();
     } catch (err: any) {
@@ -80,7 +88,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
     // Generate a new Access Token
     const newAccessToken = jwt.sign(
-      { id: user.id, name: user.name, email: user.email, preferredLanguage: user.preferredLanguage || 'en' },
+      { id: user.id },
       config.jwtAccessSecret,
       { expiresIn: config.jwtAccessExpiresIn as any }
     );
@@ -113,20 +121,28 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
   const refreshToken = req.cookies['refreshToken'];
 
   const clearAuthCookies = () => {
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax' as const,
+    };
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
   };
 
   if (accessToken) {
     try {
       const decoded = jwt.verify(accessToken, config.jwtAccessSecret) as AccessTokenPayload;
-      req.user = {
-        id: decoded.id,
-        name: decoded.name,
-        email: decoded.email,
-        preferredLanguage: decoded.preferredLanguage || 'en',
-      };
-      return next();
+      const user = await userRepository.findById(decoded.id);
+      if (user) {
+        req.user = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          preferredLanguage: user.preferredLanguage || 'en',
+        };
+        return next();
+      }
     } catch (err: any) {
       if (err.name !== 'TokenExpiredError') {
         clearAuthCookies();
@@ -141,7 +157,7 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
       const user = await userRepository.findById(decodedRefresh.id);
       if (user && user.tokenVersion === decodedRefresh.tokenVersion) {
         const newAccessToken = jwt.sign(
-          { id: user.id, name: user.name, email: user.email, preferredLanguage: user.preferredLanguage || 'en' },
+          { id: user.id },
           config.jwtAccessSecret,
           { expiresIn: config.jwtAccessExpiresIn as any }
         );

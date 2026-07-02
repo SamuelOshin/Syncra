@@ -16,6 +16,12 @@ export const pgUsers = pgTable('users', {
   tokenVersion: integer('token_version').default(1).notNull(),
   preferredLanguage: varchar('preferred_language', { length: 10 }).default('en').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  resetPasswordToken: varchar('reset_password_token', { length: 255 }),
+  resetPasswordExpiresAt: timestamp('reset_password_expires_at'),
+  failedAttempts: integer('failed_attempts').default(0).notNull(),
+  lockedUntil: timestamp('locked_until'),
+  emailVerified: boolean('email_verified').default(false).notNull(),
+  verificationToken: varchar('verification_token', { length: 255 }),
 });
 
 export const sqliteUsers = sqliteTable('users', {
@@ -26,6 +32,12 @@ export const sqliteUsers = sqliteTable('users', {
   tokenVersion: sqliteInteger('token_version').default(1).notNull(),
   preferredLanguage: sqliteText('preferred_language').default('en').notNull(),
   createdAt: sqliteText('created_at').default('(CURRENT_TIMESTAMP)').notNull(),
+  resetPasswordToken: sqliteText('reset_password_token'),
+  resetPasswordExpiresAt: sqliteText('reset_password_expires_at'),
+  failedAttempts: sqliteInteger('failed_attempts').default(0).notNull(),
+  lockedUntil: sqliteText('locked_until'),
+  emailVerified: sqliteInteger('email_verified', { mode: 'boolean' }).default(false).notNull(),
+  verificationToken: sqliteText('verification_token'),
 });
 
 // ==========================================

@@ -3,6 +3,9 @@ import http from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
+import openapiSpec from './src/docs/openapi.json';
 
 import config from './src/config';
 import initSocketManager from './src/sockets/socket.manager';
@@ -26,10 +29,28 @@ const app = express();
 // Trust proxy (necessary for express-rate-limit and secure cookies behind Railway load balancer)
 app.set('trust proxy', 1);
 
+// Mount Helmet security headers
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https://*"],
+      connectSrc: ["'self'", "wss://*", "ws://*", "https://api.deepgram.com", "https://api.livekit.co", "https://*.livekit.cloud"],
+      mediaSrc: ["'self'", "blob:", "data:"],
+    }
+  }
+}));
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: process.env.NODE_ENV === 'production' 
+      ? (process.env.CLIENT_ORIGIN ? process.env.CLIENT_ORIGIN.split(',') : false) 
+      : "*",
     methods: ["GET", "POST"]
   }
 });
@@ -38,9 +59,9 @@ app.set('io', io); // Attach Socket.io to Express for controller broadcasts
 // 1. Structured Request Logging (First in stack)
 app.use(requestLogger);
 
-// Body parsing middleware (essential for REST APIs)
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body parsing middleware (essential for REST APIs with explicit size limits)
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Cookie Parser Middleware
 app.use(cookieParser());
@@ -48,7 +69,8 @@ app.use(cookieParser());
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-// Register API Routes
+// Register API Docs and Routes
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
 app.use('/api', generalApiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/meetings', meetingRoutes);

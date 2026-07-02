@@ -15,6 +15,12 @@ export interface User {
   tokenVersion?: number;
   preferredLanguage?: string;
   createdAt?: Date | string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiresAt?: Date | string | null;
+  failedAttempts?: number;
+  lockedUntil?: Date | string | null;
+  emailVerified?: boolean | number;
+  verificationToken?: string | null;
 }
 
 export class UserRepository {
@@ -25,6 +31,16 @@ export class UserRepository {
 
   async findById(id: string): Promise<User | null> {
     const result = await dbClient.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
+    return (result[0] as User) || null;
+  }
+
+  async findByResetToken(token: string): Promise<User | null> {
+    const result = await dbClient.select().from(usersTable).where(eq(usersTable.resetPasswordToken, token)).limit(1);
+    return (result[0] as User) || null;
+  }
+
+  async findByVerificationToken(token: string): Promise<User | null> {
+    const result = await dbClient.select().from(usersTable).where(eq(usersTable.verificationToken, token)).limit(1);
     return (result[0] as User) || null;
   }
 

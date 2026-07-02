@@ -77,6 +77,26 @@ export const settings = {
         e.preventDefault();
         await this.updatePassword();
       });
+
+      // Password Visibility Toggles in settings
+      securityForm.querySelectorAll('.btn-toggle-password').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const input = btn.previousElementSibling;
+          if (!input) return;
+          
+          const isPassword = input.type === 'password';
+          input.type = isPassword ? 'text' : 'password';
+          
+          const icon = btn.querySelector('i');
+          if (icon) {
+            icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+            if (window.lucide) {
+              window.lucide.createIcons();
+            }
+          }
+        });
+      });
     }
 
     // 6. Revoke All Sessions Button
@@ -308,29 +328,72 @@ export const settings = {
   },
 
   async updatePassword() {
+    const securityForm = document.getElementById('security-update-form');
     const currentPasswordInput = document.getElementById('security-current-password');
     const newPasswordInput = document.getElementById('security-new-password');
-    if (!currentPasswordInput || !newPasswordInput) return;
+    const confirmPasswordInput = document.getElementById('security-confirm-password');
+    if (!currentPasswordInput || !newPasswordInput || !confirmPasswordInput || !securityForm) return;
+
+    ui.clearFormErrors(securityForm);
 
     const currentPassword = currentPasswordInput.value;
     const newPassword = newPasswordInput.value;
+    const confirmNewPassword = confirmPasswordInput.value;
+
+    // Client-side confirm check
+    if (newPassword !== confirmNewPassword) {
+      ui.showInputError(confirmPasswordInput, 'New passwords do not match');
+      confirmPasswordInput.focus();
+      return;
+    }
 
     try {
       const res = await fetch('/api/auth/password', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword, newPassword }),
+        body: JSON.stringify({ currentPassword, newPassword, confirmNewPassword }),
       });
 
       const payload = await res.json();
-      if (!res.ok) throw new Error(payload.message || 'Failed to update password');
+      if (!res.ok) {
+        const err = new Error(payload.message || 'Failed to update password');
+        (err as any).payload = payload;
+        throw err;
+      }
 
-      ui.showToast('Password updated successfully!', 'success');
+      ui.showToast('Password updated successfully! Other sessions revoked.', 'success');
       currentPasswordInput.value = '';
       newPasswordInput.value = '';
-    } catch (err) {
+      confirmPasswordInput.value = '';
+    } catch (err: any) {
       console.error('Password update error:', err);
-      ui.showToast(err.message, 'error');
+      
+      if (err.payload && err.payload.error_code === 'VALIDATION_ERROR' && err.payload.errors) {
+        const errors = err.payload.errors;
+        let firstInput = null;
+        
+        for (const fieldPath in errors) {
+          // Map backend field names newPassword -> security-new-password
+          let fieldId = `security-${fieldPath}`;
+          if (fieldPath === 'confirmNewPassword') {
+            fieldId = 'security-confirm-password';
+          }
+          const inputEl = document.getElementById(fieldId) || securityForm.querySelector(`[id$="${fieldPath}"]`);
+          
+          if (inputEl) {
+            ui.showInputError(inputEl, errors[fieldPath][0]);
+            if (!firstInput) firstInput = inputEl;
+          }
+        }
+        
+        if (firstInput) {
+          firstInput.focus();
+        } else {
+          ui.showToast(err.message, 'error');
+        }
+      } else {
+        ui.showToast(err.message, 'error');
+      }
     }
   },
 
