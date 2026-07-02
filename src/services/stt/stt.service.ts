@@ -32,6 +32,16 @@ export class DeepgramSTTService {
       throw new Error('Deepgram API Key is not configured on the server.');
     }
 
+    // 1. Initialize session in map immediately to buffer early chunks
+    this.sessions.set(socketId, {
+      connection: null,
+      roomId,
+      speakerName,
+      language,
+      isOpen: false,
+      buffer: []
+    });
+
     const deepgram = new DeepgramClient({ apiKey: config.deepgramApiKey });
 
     // Map locales to Deepgram supported languages
@@ -58,25 +68,11 @@ export class DeepgramSTTService {
         smart_format: 'true'
       });
 
-      connection.on('open', () => {
-        console.log(`[STT] Deepgram connection opened for socket: ${socketId}`);
-        const session = this.sessions.get(socketId);
-        if (session) {
-          session.isOpen = true;
-          // Send all buffered chunks
-          if (session.buffer.length > 0) {
-            console.log(`[STT] Flushing ${session.buffer.length} buffered audio chunks for socket: ${socketId}`);
-            for (const chunk of session.buffer) {
-              try {
-                connection.sendMedia(chunk);
-              } catch (err) {
-                console.error(`[STT] Error sending buffered audio media for socket ${socketId}:`, err);
-              }
-            }
-            session.buffer = [];
-          }
-        }
-      });
+      // Update the connection object in the session
+      const session = this.sessions.get(socketId);
+      if (session) {
+        session.connection = connection;
+      }
 
       connection.on('message', (data: any) => {
         if (data.type === 'Results') {
@@ -97,16 +93,29 @@ export class DeepgramSTTService {
         this.sessions.delete(socketId);
       });
 
-      this.sessions.set(socketId, {
-        connection,
-        roomId,
-        speakerName,
-        language,
-        isOpen: false,
-        buffer: []
-      });
+      // 2. Wait for the socket to be fully open
+      await connection.waitForOpen();
+      console.log(`[STT] Deepgram connection is fully open for socket: ${socketId}`);
+
+      // 3. Mark session as open and flush buffer
+      const activeSession = this.sessions.get(socketId);
+      if (activeSession) {
+        activeSession.isOpen = true;
+        if (activeSession.buffer.length > 0) {
+          console.log(`[STT] Flushing ${activeSession.buffer.length} buffered audio chunks for socket: ${socketId}`);
+          for (const chunk of activeSession.buffer) {
+            try {
+              connection.sendMedia(chunk);
+            } catch (err) {
+              console.error(`[STT] Error sending buffered audio media for socket ${socketId}:`, err);
+            }
+          }
+          activeSession.buffer = [];
+        }
+      }
     } catch (err) {
       console.error(`[STT] Error establishing Deepgram connection for socket ${socketId}:`, err);
+      this.sessions.delete(socketId);
       throw err;
     }
   }
@@ -120,10 +129,9 @@ export class DeepgramSTTService {
       return;
     }
 
-    if (session.isOpen) {
-      const { connection } = session;
+    if (session.isOpen && session.connection) {
       try {
-        connection.sendMedia(audioChunk);
+        session.connection.sendMedia(audioChunk);
       } catch (err) {
         console.error(`[STT] Error sending audio media for socket ${socketId}:`, err);
       }
@@ -142,10 +150,12 @@ export class DeepgramSTTService {
 
     console.log(`[STT] Closing Deepgram session for socket: ${socketId}`);
     const { connection } = session;
-    try {
-      connection.close();
-    } catch (err) {
-      console.error(`[STT] Error closing Deepgram connection for socket ${socketId}:`, err);
+    if (connection) {
+      try {
+        connection.close();
+      } catch (err) {
+        console.error(`[STT] Error closing Deepgram connection for socket ${socketId}:`, err);
+      }
     }
 
     this.sessions.delete(socketId);
