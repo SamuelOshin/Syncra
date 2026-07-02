@@ -598,9 +598,9 @@ function handleMuteClick() {
   isMuted = !isMuted;
   webrtc.toggleMute(isMuted);
   speech.setMuted(isMuted);
-  audioStreamer.setMuted(isMuted);
 
   if (isMuted) {
+    audioStreamer.stop();
     btnMute.classList.remove('active');
     btnMute.classList.add('muted');
     btnMute.innerHTML = '<i data-lucide="mic-off"></i>';
@@ -610,6 +610,22 @@ function handleMuteClick() {
     btnMute.classList.remove('muted');
     btnMute.innerHTML = '<i data-lucide="mic"></i>';
     ui.showToast('Microphone unmuted', 'info');
+
+    // Wait for the new audio track to be published by WebRTC/LiveKit
+    setTimeout(async () => {
+      try {
+        const localAudioStream = webrtc.getLocalAudioStream();
+        if (localAudioStream) {
+          audioStreamer.init(socket, activeRoomId, userLang, userName);
+          await audioStreamer.start(localAudioStream);
+          console.log('[MuteClick] STT streaming restarted with fresh audio track.');
+        } else {
+          console.warn('[MuteClick] No active audio track found after unmute.');
+        }
+      } catch (err) {
+        console.error('[MuteClick] Failed to restart STT streaming on unmute:', err);
+      }
+    }, 450);
   }
   lucide.createIcons();
 }
