@@ -29,12 +29,6 @@ export class DeepgramSTTService {
       if (state === 1) { // OPEN
         return resolve();
       }
-      if (state === 2) { // CLOSING
-        return reject(new Error('WebSocket is already CLOSING.'));
-      }
-      if (state === 3) { // CLOSED
-        return reject(new Error('WebSocket is already CLOSED.'));
-      }
 
       let timeout: NodeJS.Timeout;
 
