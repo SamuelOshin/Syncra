@@ -237,6 +237,10 @@
               <i data-lucide="message-square"></i>
               <span>Chat</span>
             </a>
+            <a href="#" class="menu-item mobile-only-nav" id="btn-sidebar-more">
+              <i data-lucide="more-horizontal"></i>
+              <span>More</span>
+            </a>
           </nav>
           
           <div class="sidebar-footer">
@@ -1218,6 +1222,53 @@
       <div class="modal-actions" style="margin-top: 24px;">
         <button id="btn-cancel-confirm" class="btn btn-secondary">Cancel</button>
         <button id="btn-action-confirm" class="btn btn-primary">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Sheet Drawer -->
+  <div id="mobile-nav-sheet" class="bottom-sheet-overlay">
+    <div class="bottom-sheet-card">
+      <div class="bottom-sheet-header">
+        <div class="bottom-sheet-handle"></div>
+        <div class="bottom-sheet-title-row">
+          <h3>More Options</h3>
+          <button id="btn-close-mobile-sheet" class="bottom-sheet-close"><i data-lucide="x"></i></button>
+        </div>
+      </div>
+      <div class="bottom-sheet-body">
+        <div class="bottom-sheet-grid">
+          <button class="sheet-grid-item" id="btn-sheet-tm">
+            <div class="sheet-icon-wrapper tm-color">
+              <i data-lucide="database"></i>
+            </div>
+            <span>Translation Memory</span>
+          </button>
+          <button class="sheet-grid-item" id="btn-sheet-glossary">
+            <div class="sheet-icon-wrapper glossary-color">
+              <i data-lucide="book-open"></i>
+            </div>
+            <span>Glossary</span>
+          </button>
+          <button class="sheet-grid-item" id="btn-sheet-analytics">
+            <div class="sheet-icon-wrapper analytics-color">
+              <i data-lucide="bar-chart-2"></i>
+            </div>
+            <span>Analytics</span>
+          </button>
+          <button class="sheet-grid-item" id="btn-sheet-settings">
+            <div class="sheet-icon-wrapper settings-color">
+              <i data-lucide="settings"></i>
+            </div>
+            <span>Settings</span>
+          </button>
+          <button class="sheet-grid-item" id="btn-sheet-support">
+            <div class="sheet-icon-wrapper support-color">
+              <i data-lucide="help-circle"></i>
+            </div>
+            <span>Support</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

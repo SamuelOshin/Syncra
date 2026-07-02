@@ -731,12 +731,25 @@ function initSidebarNavigation() {
     item.addEventListener('click', async (e) => {
       e.preventDefault();
 
+      // Close mobile sheet if open
+      const mobileSheet = document.getElementById('mobile-nav-sheet');
+      if (mobileSheet && mobileSheet.classList.contains('active')) {
+        mobileSheet.classList.remove('active');
+      }
+
       // Stop camera preview if navigating AWAY from settings
       if (window.syncraStopCameraPreview) {
         window.syncraStopCameraPreview();
       }
 
       const id = item.id;
+      if (id === 'btn-sidebar-more') {
+        if (mobileSheet) {
+          mobileSheet.classList.add('active');
+        }
+        return;
+      }
+
       let targetViewId = 'view-dashboard';
 
       if (id === 'btn-sidebar-calendar') targetViewId = 'view-calendar';
@@ -799,6 +812,57 @@ function initSidebarNavigation() {
   if (captionsPanel && panelHeader) {
     makeElementDraggable(captionsPanel, panelHeader);
   }
+
+  // Mobile Bottom Sheet Navigation handling
+  const mobileSheet = document.getElementById('mobile-nav-sheet');
+  const btnCloseMobileSheet = document.getElementById('btn-close-mobile-sheet');
+  
+  function closeMobileSheet() {
+    if (mobileSheet) {
+      mobileSheet.classList.remove('active');
+    }
+  }
+
+  if (btnCloseMobileSheet) {
+    btnCloseMobileSheet.addEventListener('click', closeMobileSheet);
+  }
+  if (mobileSheet) {
+    mobileSheet.addEventListener('click', (e) => {
+      if (e.target === mobileSheet) {
+        closeMobileSheet();
+      }
+    });
+  }
+
+  const sheetItems = [
+    { btnId: 'btn-sheet-tm', targetId: 'btn-sidebar-tm' },
+    { btnId: 'btn-sheet-glossary', targetId: 'btn-sidebar-glossary' },
+    { btnId: 'btn-sheet-analytics', targetId: 'btn-sidebar-analytics' },
+    { btnId: 'btn-sheet-settings', targetId: 'btn-sidebar-settings' }
+  ];
+
+  sheetItems.forEach(itemConfig => {
+    const btn = document.getElementById(itemConfig.btnId);
+    btn?.addEventListener('click', () => {
+      closeMobileSheet();
+      const targetMenu = document.getElementById(itemConfig.targetId);
+      if (targetMenu) {
+        targetMenu.click();
+        // Overwrite active highlight for mobile bottom navigation:
+        // make the "More" item active instead of the hidden original items.
+        if (window.innerWidth <= 767) {
+          menuItems.forEach(mi => mi.classList.remove('active'));
+          document.getElementById('btn-sidebar-more')?.classList.add('active');
+        }
+      }
+    });
+  });
+
+  const btnSheetSupport = document.getElementById('btn-sheet-support');
+  btnSheetSupport?.addEventListener('click', () => {
+    closeMobileSheet();
+    ui.showToast('Support is available at support@syncra.io', 'info');
+  });
 }
 
 // Reusable Dragging Orchestrator for absolute-positioned elements (Mobile Layouts)

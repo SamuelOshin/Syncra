@@ -325,6 +325,36 @@ body, html {
   width: 100%;
 }
 
+.btn-icon {
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background: var(--bg-main) !important;
+  color: var(--text-body) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: none !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.btn-icon:hover {
+  background: var(--border-subtle) !important;
+  color: var(--text-main) !important;
+  transform: translateY(-1px);
+}
+
+.btn-icon:active {
+  transform: scale(0.92);
+}
+
+.btn-icon svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
 .divider {
   display: flex;
   align-items: center;
@@ -449,6 +479,10 @@ body, html {
   font-size: 0.95rem;
   border-radius: 8px; /* Square-ish button matching design */
   font-weight: 600;
+}
+
+.mobile-only-nav {
+  display: none !important;
 }
 
 .sidebar-menu {
@@ -2203,6 +2237,16 @@ body, html {
     margin: 0 !important;
   }
   
+  .mobile-only-nav {
+    display: flex !important;
+  }
+
+  #btn-sidebar-tm,
+  #btn-sidebar-glossary,
+  #btn-sidebar-analytics {
+    display: none !important;
+  }
+  
   .menu-item {
     flex-direction: column !important;
     align-items: center !important;
@@ -3746,10 +3790,24 @@ body, html {
 }
 
 .chat-empty-state-list {
-  padding: 32px 24px;
+  padding: 40px 24px;
   text-align: center;
   color: var(--text-muted);
   font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.chat-empty-state-list svg {
+  width: 32px;
+  height: 32px;
+  color: var(--text-muted);
+  opacity: 0.6;
+  stroke-dasharray: 4 2;
+  margin-bottom: 4px;
 }
 
 .chat-item {
@@ -4523,4 +4581,194 @@ body, html {
   color: var(--primary); /* Matches theme primary blue */
 }
 
+/* ==========================================================================
+   MOBILE BOTTOM SHEET STYLES
+   ========================================================================== */
+.bottom-sheet-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(15, 23, 42, 0.4); /* Slate-900 transparent wash */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
+.bottom-sheet-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bottom-sheet-card {
+  width: 100%;
+  background: var(--bg-secondary);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.12);
+  padding: 16px 20px 32px 20px;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.bottom-sheet-overlay.active .bottom-sheet-card {
+  transform: translateY(0);
+}
+
+.bottom-sheet-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.bottom-sheet-handle {
+  width: 36px;
+  height: 4px;
+  background-color: var(--border-subtle);
+  border-radius: 2px;
+  margin-bottom: 16px;
+}
+
+.bottom-sheet-title-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bottom-sheet-title-row h3 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+}
+
+.bottom-sheet-close {
+  background: var(--bg-main);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-body);
+  transition: all var(--transition-fast);
+}
+
+.bottom-sheet-close:active {
+  transform: scale(0.9);
+  background-color: var(--border-subtle);
+}
+
+.bottom-sheet-body {
+  width: 100%;
+  overflow-y: auto;
+}
+
+.bottom-sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.sheet-grid-item {
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 8px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  text-decoration: none;
+  font-family: var(--font-body);
+}
+
+.sheet-grid-item:active {
+  transform: scale(0.95);
+  background-color: var(--bg-main);
+}
+
+.sheet-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+}
+
+.sheet-grid-item svg {
+  width: 22px;
+  height: 22px;
+}
+
+.sheet-grid-item span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-body);
+  text-align: center;
+  line-height: 1.25;
+}
+
+/* Elegant Curated Color Palette for Sheet Icons */
+.tm-color {
+  background-color: hsl(210, 100%, 96%);
+  color: hsl(210, 100%, 45%);
+}
+.sheet-grid-item:active .tm-color {
+  background-color: hsl(210, 100%, 90%);
+}
+
+.glossary-color {
+  background-color: hsl(262, 100%, 96%);
+  color: hsl(262, 80%, 50%);
+}
+.sheet-grid-item:active .glossary-color {
+  background-color: hsl(262, 100%, 90%);
+}
+
+.analytics-color {
+  background-color: hsl(150, 100%, 95%);
+  color: hsl(150, 84%, 30%);
+}
+.sheet-grid-item:active .analytics-color {
+  background-color: hsl(150, 100%, 88%);
+}
+
+.settings-color {
+  background-color: hsl(28, 100%, 95%);
+  color: hsl(28, 90%, 45%);
+}
+.sheet-grid-item:active .settings-color {
+  background-color: hsl(28, 100%, 88%);
+}
+
+.support-color {
+  background-color: hsl(190, 100%, 95%);
+  color: hsl(190, 90%, 40%);
+}
+.sheet-grid-item:active .support-color {
+  background-color: hsl(190, 100%, 88%);
+}

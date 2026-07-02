@@ -223,9 +223,23 @@ export const chat = {
     if (this.chats.length === 0) {
       listContainer.innerHTML = `
         <div class="chat-empty-state-list">
-          <p>No conversations yet.</p>
+          <i data-lucide="message-square-dashed"></i>
+          <p>No conversations yet</p>
+          <button id="btn-empty-list-new-chat" class="btn btn-secondary" style="margin-top: 8px; height: 38px; padding: 0 16px; font-size: 0.85rem; border-radius: 8px;">
+            <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+            <span>Start a Chat</span>
+          </button>
         </div>
       `;
+      if (window.lucide) window.lucide.createIcons();
+
+      const btnEmptyListChat = document.getElementById('btn-empty-list-new-chat');
+      if (btnEmptyListChat) {
+        btnEmptyListChat.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.openNewChatModal();
+        });
+      }
       return;
     }
 
