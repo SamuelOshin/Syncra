@@ -248,6 +248,25 @@ function initGlobalEvents() {
     checkSessionAndRoute();
   });
 
+  // Mobile Captions Panel Expand/Collapse Toggle
+  const panelHeader = document.querySelector('.panel-header');
+  const captionsPanel = document.querySelector('.captions-panel');
+  if (panelHeader && captionsPanel) {
+    panelHeader.addEventListener('click', () => {
+      if (window.innerWidth < 768) {
+        captionsPanel.classList.toggle('expanded');
+        const expandIcon = document.getElementById('panel-expand-icon');
+        if (expandIcon) {
+          const isExpanded = captionsPanel.classList.contains('expanded');
+          expandIcon.setAttribute('data-lucide', isExpanded ? 'chevron-down' : 'chevron-up');
+          if (window.lucide) {
+            window.lucide.createIcons();
+          }
+        }
+      }
+    });
+  }
+
   // Call controls click bindings
   btnMute.addEventListener('click', handleMuteClick);
   btnCamera.addEventListener('click', handleCameraClick);
