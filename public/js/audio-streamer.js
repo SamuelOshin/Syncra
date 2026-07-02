@@ -109,15 +109,8 @@ export const audioStreamer = {
         }
       };
 
-      // Create a High-pass filter to cut off low frequency background hums (below 120Hz)
-      this.filterNode = this.audioContext.createBiquadFilter();
-      this.filterNode.type = 'highpass';
-      this.filterNode.frequency.value = 120; // 120 Hz
-      console.log('[AudioStreamer] Highpass filter initialized at 120Hz to suppress low-frequency background noise.');
-
-      // Connect the audio graph: source → filter → worklet → destination
-      this.sourceNode.connect(this.filterNode);
-      this.filterNode.connect(this.workletNode);
+      // Connect the audio graph: source → worklet (no output to speakers to avoid echo)
+      this.sourceNode.connect(this.workletNode);
       this.workletNode.connect(this.audioContext.destination);
 
       // Signal the server to start a Deepgram STT session
