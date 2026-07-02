@@ -160,6 +160,11 @@ export const chat = {
       this.renderChatList();
     });
 
+    // Video Call button click (planned placeholder)
+    document.getElementById('btn-chat-video-call')?.addEventListener('click', () => {
+      ui.showToast('Video calling feature is coming soon!', 'info');
+    });
+
     // Chat search filter
     document.getElementById('chat-search-input')?.addEventListener('input', (e) => {
       const val = e.target.value.trim().toLowerCase();

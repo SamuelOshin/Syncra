@@ -2339,6 +2339,21 @@ body, html {
     padding: 24px 16px !important;
     gap: 28px !important;
   }
+
+  /* Full-bleed Chat Screen Layout for Mobile */
+  #view-chat {
+    margin: -24px -16px !important;
+    height: calc(100vh - 60px - 64px) !important;
+    width: calc(100% + 32px) !important;
+    max-width: unset !important;
+  }
+  
+  .chat-card-layout {
+    height: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
   
   .welcome-banner h2 {
     font-size: 1.6rem !important;
@@ -3963,6 +3978,12 @@ body, html {
   justify-content: space-between;
   align-items: center;
   background: rgba(255, 255, 255, 0.5);
+}
+
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .chat-header-user {
