@@ -15,6 +15,66 @@ export class DeepgramSTTService {
   >();
 
   /**
+   * Safe helper to wait for the WebSocket to open, rejecting on close, error, or timeout.
+   */
+  private waitForConnectionOpen(connection: any, timeoutMs = 5000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // ReadyState 1 is OPEN
+      if (connection.readyState === 1 || (connection.socket && connection.socket.readyState === 1)) {
+        return resolve();
+      }
+
+      let timeout: NodeJS.Timeout;
+      const socket = connection.socket;
+
+      if (!socket || typeof socket.addEventListener !== 'function') {
+        return reject(new Error('Underlying socket is not available or is invalid.'));
+      }
+
+      const cleanUp = () => {
+        clearTimeout(timeout);
+        try {
+          socket.removeEventListener('open', onOpen);
+          socket.removeEventListener('close', onClose);
+          socket.removeEventListener('error', onError);
+        } catch (e) {
+          // ignore cleanup errors
+        }
+      };
+
+      const onOpen = () => {
+        cleanUp();
+        resolve();
+      };
+
+      const onClose = (event: any) => {
+        cleanUp();
+        reject(
+          new Error(
+            `WebSocket closed during handshake. Code: ${event.code || 'unknown'}, Reason: ${
+              event.reason || 'None'
+            }`
+          )
+        );
+      };
+
+      const onError = (err: any) => {
+        cleanUp();
+        reject(new Error(`WebSocket error during handshake: ${err.message || 'unknown error'}`));
+      };
+
+      timeout = setTimeout(() => {
+        cleanUp();
+        reject(new Error(`WebSocket connection timeout after ${timeoutMs}ms (ReadyState: ${connection.readyState})`));
+      }, timeoutMs);
+
+      socket.addEventListener('open', onOpen);
+      socket.addEventListener('close', onClose);
+      socket.addEventListener('error', onError);
+    });
+  }
+
+  /**
    * Starts a new streaming transcription session for a socket client.
    */
   public async startSession(
@@ -88,13 +148,17 @@ export class DeepgramSTTService {
         console.error(`[STT] Deepgram connection error for socket ${socketId}:`, error);
       });
 
-      connection.on('close', () => {
-        console.log(`[STT] Deepgram connection closed for socket: ${socketId}`);
+      connection.on('close', (event: any) => {
+        console.log(
+          `[STT] Deepgram connection closed for socket: ${socketId} (Code: ${event?.code || 'unknown'}, Reason: ${
+            event?.reason || 'None'
+          })`
+        );
         this.sessions.delete(socketId);
       });
 
-      // 2. Wait for the socket to be fully open
-      await connection.waitForOpen();
+      // 2. Wait for the socket to be fully open (using our robust helper)
+      await this.waitForConnectionOpen(connection);
       console.log(`[STT] Deepgram connection is fully open for socket: ${socketId}`);
 
       // 3. Mark session as open and flush buffer
