@@ -164,6 +164,9 @@ export class DeepgramSTTService {
         this.sessions.delete(socketId);
       });
 
+      // Start the WebSocket handshake (required since the SDK creates it in startClosed state)
+      connection.connect();
+
       // 2. Wait for the socket to be fully open (using our robust helper)
       await this.waitForConnectionOpen(connection);
       console.log(`[STT] Deepgram connection is fully open for socket: ${socketId}`);
