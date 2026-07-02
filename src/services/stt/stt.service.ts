@@ -19,16 +19,21 @@ export class DeepgramSTTService {
    */
   private waitForConnectionOpen(connection: any, timeoutMs = 5000): Promise<void> {
     return new Promise((resolve, reject) => {
-      // ReadyState 1 is OPEN
-      if (connection.readyState === 1 || (connection.socket && connection.socket.readyState === 1)) {
-        return resolve();
-      }
-
-      let timeout: NodeJS.Timeout;
       const socket = connection.socket;
-
       if (!socket || typeof socket.addEventListener !== 'function') {
         return reject(new Error('Underlying socket is not available or is invalid.'));
+      }
+
+      // Check current state immediately
+      const state = connection.readyState !== undefined ? connection.readyState : socket.readyState;
+      if (state === 1) { // OPEN
+        return resolve();
+      }
+      if (state === 2) { // CLOSING
+        return reject(new Error('WebSocket is already CLOSING.'));
+      }
+      if (state === 3) { // CLOSED
+        return reject(new Error('WebSocket is already CLOSED.'));
       }
 
       const cleanUp = () => {
