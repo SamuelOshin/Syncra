@@ -124,7 +124,12 @@ export const speech = {
       speechStatus.textContent = 'Muted';
       speechStatus.className = 'speech-status idle';
     } else {
-      this.start();
+      if (this.serverSTTActive) {
+        speechStatus.textContent = 'Server Transcription Active';
+        speechStatus.className = 'speech-status listening';
+      } else {
+        this.start();
+      }
     }
   }
 };
