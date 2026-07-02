@@ -2377,7 +2377,7 @@ body, html {
     left: 16px;
     right: 16px;
     height: 140px !important;
-    background: rgba(10, 15, 30, 0.85) !important;
+    background: rgba(10, 15, 30, 0.9) !important; /* Rich Dark Black base */
     backdrop-filter: blur(24px) !important;
     -webkit-backdrop-filter: blur(24px) !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -2386,13 +2386,19 @@ body, html {
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4) !important;
+    transition: height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  }
+
+  .captions-panel.expanded {
+    height: 380px !important; /* Premium expand/collapse state */
   }
 
   .panel-header {
     padding: 10px 16px !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     background: transparent !important;
+    cursor: pointer !important; /* Clickable expand surface */
   }
 
   .panel-header h3 {
@@ -2405,6 +2411,20 @@ body, html {
     color: #38BDF8 !important;
     width: 14px !important;
     height: 14px !important;
+  }
+
+  .panel-header-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  .mobile-expand-hint {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 1.1rem !important;
   }
 
   .speech-status {
@@ -2421,10 +2441,11 @@ body, html {
   }
 
   .caption-card {
-    padding: 10px 14px !important;
+    padding: 8px 12px !important;
     border-radius: 12px !important;
     margin-bottom: 2px !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    max-width: 90% !important;
   }
 
   .caption-card.me {
@@ -2439,9 +2460,35 @@ body, html {
     border-left: 3px solid var(--success) !important;
   }
 
+  /* Interim Speaking state using Premium Blue, White, and Black Palette */
+  .caption-card.interim {
+    align-self: flex-end !important;
+    background: rgba(30, 91, 240, 0.16) !important; /* Vibrant Translucent Blue */
+    border: 1px dashed rgba(30, 91, 240, 0.35) !important;
+    border-left: 3px solid #3B82F6 !important;
+  }
+
+  .caption-card.interim .speaker-name {
+    color: #60A5FA !important; /* Light blue accent */
+  }
+
+  .caption-card.interim .original {
+    color: #FFFFFF !important; /* Crisp high-contrast White text */
+    font-style: normal !important;
+    font-weight: 500 !important;
+    font-size: 0.86rem !important; /* Match primary readable size */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .caption-card.interim .interim-badge {
+    color: #38BDF8 !important;
+    font-size: 0.62rem !important;
+    animation: pulse-light 1.2s infinite !important;
+  }
+
   .caption-card .speaker-name {
     color: rgba(255, 255, 255, 0.95) !important;
-    font-size: 0.78rem !important;
+    font-size: 0.72rem !important; /* Reduced for better data density */
     font-weight: 700 !important;
   }
 
@@ -2452,17 +2499,17 @@ body, html {
 
   .caption-card .original {
     color: rgba(255, 255, 255, 0.65) !important;
-    font-size: 0.8rem !important;
+    font-size: 0.74rem !important; /* Reduced for better data density */
     font-style: italic !important;
-    margin-top: 2px !important;
+    margin-top: 1px !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
   }
 
   .caption-card .translated {
     color: #F8FAFC !important;
-    font-size: 0.95rem !important;
+    font-size: 0.86rem !important; /* Reduced for better data density */
     font-weight: 600 !important;
-    margin-top: 3px !important;
+    margin-top: 2px !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
   }
 
@@ -2474,7 +2521,7 @@ body, html {
 
   .welcome-caption .translated {
     color: rgba(255, 255, 255, 0.75) !important;
-    font-size: 0.82rem !important;
+    font-size: 0.76rem !important;
     line-height: 1.48 !important;
     font-weight: 500 !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
