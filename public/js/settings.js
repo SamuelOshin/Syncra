@@ -357,7 +357,7 @@ export const settings = {
       const payload = await res.json();
       if (!res.ok) {
         const err = new Error(payload.message || 'Failed to update password');
-        (err as any).payload = payload;
+        err.payload = payload;
         throw err;
       }
 
@@ -365,7 +365,7 @@ export const settings = {
       currentPasswordInput.value = '';
       newPasswordInput.value = '';
       confirmPasswordInput.value = '';
-    } catch (err: any) {
+    } catch (err) {
       console.error('Password update error:', err);
       
       if (err.payload && err.payload.error_code === 'VALIDATION_ERROR' && err.payload.errors) {

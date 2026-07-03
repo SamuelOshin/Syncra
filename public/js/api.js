@@ -18,7 +18,7 @@ export const api = {
     const payload = await res.json();
     if (!res.ok) {
       const err = new Error(payload.message || 'Sign in failed');
-      (err as any).payload = payload;
+      err.payload = payload;
       throw err;
     }
     return payload;
@@ -33,7 +33,7 @@ export const api = {
     const payload = await res.json();
     if (!res.ok) {
       const err = new Error(payload.message || 'Sign up failed');
-      (err as any).payload = payload;
+      err.payload = payload;
       throw err;
     }
     return payload;
@@ -234,7 +234,7 @@ export const api = {
     const payload = await res.json();
     if (!res.ok) {
       const err = new Error(payload.message || 'Forgot password request failed');
-      (err as any).payload = payload;
+      err.payload = payload;
       throw err;
     }
     return payload;
@@ -249,7 +249,7 @@ export const api = {
     const payload = await res.json();
     if (!res.ok) {
       const err = new Error(payload.message || 'Reset password request failed');
-      (err as any).payload = payload;
+      err.payload = payload;
       throw err;
     }
     return payload;
@@ -264,7 +264,7 @@ export const api = {
     const payload = await res.json();
     if (!res.ok) {
       const err = new Error(payload.message || 'Resend verification request failed');
-      (err as any).payload = payload;
+      err.payload = payload;
       throw err;
     }
     return payload;
