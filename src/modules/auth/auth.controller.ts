@@ -6,6 +6,7 @@ import { ConflictError, UnauthorizedError, ForbiddenError, BadRequestError, NotF
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import config from '../../config';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../../utils/email';
 
 const userRepository = new UserRepository();
 
@@ -20,7 +21,7 @@ export class AuthController {
       const existingUser = await userRepository.findByEmail(email.toLowerCase());
       if (existingUser) {
         // Return a generic success response to prevent user enumeration
-        successResponse(res, 201, 'Registration successful. Please check your email to verify your account.', {
+        successResponse(res, 201, config.requireEmailVerification ? 'Registration successful. Please check your email to verify your account.' : 'Registration successful. Your account has been created.', {
           user: {
             id: 'generic-id',
             name,
@@ -37,22 +38,26 @@ export class AuthController {
       const userId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
       const verificationToken = crypto.randomBytes(32).toString('hex');
 
+      const requireVerify = config.requireEmailVerification;
       const newUser: User = {
         id: userId,
         name,
         email: email.toLowerCase(),
         password: hashedPassword,
         tokenVersion: 1,
-        emailVerified: false,
-        verificationToken,
+        emailVerified: !requireVerify,
+        verificationToken: requireVerify ? verificationToken : null,
       };
 
       await userRepository.create(newUser);
 
-      // Simulate sending email by logging in console
-      console.log(`[Email Service] Verification link for ${newUser.email}: http://localhost:${config.port}/api/auth/verify-email?token=${verificationToken}`);
+      // Simulate sending email by logging in console or via Resend SDK if API key is provided
+      if (requireVerify) {
+        const link = `http://localhost:${config.port}/api/auth/verify-email?token=${verificationToken}`;
+        await sendVerificationEmail(newUser.email, newUser.name, link);
+      }
 
-      successResponse(res, 201, 'Registration successful. Please check your email to verify your account.', {
+      successResponse(res, 201, requireVerify ? 'Registration successful. Please check your email to verify your account.' : 'Registration successful. Your account has been created.', {
         user: {
           id: newUser.id,
           name: newUser.name,
@@ -86,8 +91,8 @@ export class AuthController {
         return;
       }
 
-      // 2. Email Verification Check
-      if (!user.emailVerified) {
+      // 2. Email Verification Check (only if configured)
+      if (config.requireEmailVerification && !user.emailVerified) {
         next(new UnauthorizedError('Please verify your email address before signing in', 'EMAIL_NOT_VERIFIED'));
         return;
       }
@@ -449,7 +454,8 @@ export class AuthController {
       const verificationToken = crypto.randomBytes(32).toString('hex');
       await userRepository.update(user.id, { verificationToken });
       
-      console.log(`[Email Service] Resending verification link for ${user.email}: http://localhost:${config.port}/api/auth/verify-email?token=${verificationToken}`);
+      const link = `http://localhost:${config.port}/api/auth/verify-email?token=${verificationToken}`;
+      await sendVerificationEmail(user.email, user.name, link);
       
       successResponse(res, 200, 'If this email is registered, a new verification link has been sent.');
     } catch (error) {
@@ -476,7 +482,8 @@ export class AuthController {
         resetPasswordExpiresAt: resetExpires,
       });
       
-      console.log(`[Email Service] Password reset link for ${user.email}: http://localhost:${config.port}/#reset-password?token=${resetToken}`);
+      const link = `http://localhost:${config.port}/#reset-password?token=${resetToken}`;
+      await sendPasswordResetEmail(user.email, user.name, link);
       
       successResponse(res, 200, 'If this email exists, a password reset link has been sent.');
     } catch (error) {

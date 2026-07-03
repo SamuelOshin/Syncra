@@ -25,8 +25,14 @@ class Config {
   public readonly translationFallbackChain: string;
   public readonly deepgramApiKey: string;
   public readonly hasDeepgram: boolean;
+  public readonly requireEmailVerification: boolean;
+  public readonly resendApiKey: string;
+  public readonly emailFrom: string;
 
   constructor() {
+    this.requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION === 'true';
+    this.resendApiKey = process.env.RESEND_API_KEY || '';
+    this.emailFrom = process.env.EMAIL_FROM || 'Syncra <onboarding@resend.dev>';
     this.port = this.normalizePort(process.env.PORT || '3000');
     
     // Fail-fast in production if API key is missing
