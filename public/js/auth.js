@@ -38,7 +38,36 @@ function displayError(form, err) {
       ui.showToast(err.message, 'error');
     }
   } else {
-    ui.showToast(err.message, 'error');
+    if (err.payload && err.payload.error_code === 'EMAIL_NOT_VERIFIED') {
+      const emailInput = document.getElementById('signin-email');
+      const email = emailInput ? emailInput.value.trim() : '';
+      
+      if (emailInput) {
+        ui.showInputError(emailInput, 'Email not verified.');
+        const inputGroup = emailInput.closest('.input-group');
+        const errorLabel = inputGroup ? inputGroup.querySelector('.validation-error-label') : null;
+        if (errorLabel) {
+          errorLabel.innerHTML = `Please verify your email. <a href="#" id="link-resend-verification" class="auth-link" style="text-decoration: underline; font-weight: 600;">Resend link</a>`;
+          
+          const resendBtn = document.getElementById('link-resend-verification');
+          if (resendBtn) {
+            resendBtn.addEventListener('click', async (clickEvent) => {
+              clickEvent.preventDefault();
+              try {
+                await api.resendVerification(email);
+                ui.showToast('Verification email resent! Check server console.', 'success');
+              } catch (resendErr: any) {
+                ui.showToast(resendErr.message, 'error');
+              }
+            });
+          }
+        }
+      } else {
+        ui.showToast(err.message, 'error');
+      }
+    } else {
+      ui.showToast(err.message, 'error');
+    }
   }
 }
 
