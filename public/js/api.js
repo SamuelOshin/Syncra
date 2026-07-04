@@ -4,9 +4,20 @@
 
 export const api = {
   async getMe() {
-    const res = await fetch('/api/auth/me');
-    if (!res.ok) throw new Error('Unauthenticated');
-    return res.json();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    try {
+      const res = await fetch('/api/auth/me', { signal: controller.signal });
+      if (!res.ok) throw new Error('Unauthenticated');
+      return res.json();
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        throw new Error('Server is taking too long to respond. Please try again.');
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+    }
   },
 
   async signIn(email, password) {
