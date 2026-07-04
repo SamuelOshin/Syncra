@@ -7,6 +7,7 @@ import { ui } from './ui.js';
 
 export const notifications = {
   list: [],
+  _interval: null,
 
   init() {
     const btnBell = document.getElementById('btn-notifications');
@@ -58,14 +59,19 @@ export const notifications = {
       }
     });
 
-    // Initial check for unread alerts
+    // NOTE: Polling is NOT started here. Call notifications.start() only
+    // after the user is confirmed authenticated (post getMe() success).
+  },
+
+  // Call this once after authentication is confirmed.
+  start() {
+    if (this._interval) return; // Already started — prevent double-init
     this.pollNotifications();
-    
-    // Poll for new notifications every 30 seconds (lightweight real-time updates)
-    setInterval(() => this.pollNotifications(), 30000);
+    this._interval = setInterval(() => this.pollNotifications(), 30000);
   },
 
   async pollNotifications() {
+    if (!this._interval && this._interval !== 0) return; // Not started yet — skip silently
     try {
       const res = await api.getNotifications();
       this.list = res.data.notifications || [];

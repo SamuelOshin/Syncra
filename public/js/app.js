@@ -153,6 +153,9 @@ async function checkSessionAndRoute() {
     // Initialize Chat module
     chat.init(currentUser, socket);
     
+    // Start notification polling now that the user is authenticated
+    notifications.start();
+
     // Populate Profile Header UI
     profileName.textContent = currentUser.name;
     profileEmail.textContent = currentUser.email;
