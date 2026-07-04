@@ -17,6 +17,7 @@ export const generalApiLimiter = rateLimit({
   limit: 300,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => req.ip ?? 'unknown',
   handler: rateLimitHandler,
 });
 
@@ -26,6 +27,7 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
+  keyGenerator: (req) => req.ip ?? 'unknown',
   handler: rateLimitHandler,
 });
 
@@ -34,6 +36,7 @@ export const searchLimiter = rateLimit({
   limit: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => req.ip ?? 'unknown',
   handler: rateLimitHandler,
 });
 
@@ -42,5 +45,6 @@ export const publicVerifyLimiter = rateLimit({
   limit: 120,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => req.ip ?? 'unknown',
   handler: rateLimitHandler,
 });
