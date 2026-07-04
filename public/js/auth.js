@@ -56,7 +56,7 @@ function displayError(form, err) {
               try {
                 await api.resendVerification(email);
                 ui.showToast('Verification email resent! Check server console.', 'success');
-              } catch (resendErr: any) {
+              } catch (resendErr) {
                 ui.showToast(resendErr.message, 'error');
               }
             });
