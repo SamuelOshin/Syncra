@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { rateLimit } from 'express-rate-limit';
+import { rateLimit, ipKeyGenerator } from 'express-rate-limit';
 import { errorResponse } from '../utils/response';
 
 function rateLimitHandler(req: Request, res: Response): void {
@@ -17,7 +17,7 @@ export const generalApiLimiter = rateLimit({
   limit: 300,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip ?? 'unknown',
+  keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
   handler: rateLimitHandler,
 });
 
@@ -27,7 +27,7 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
-  keyGenerator: (req) => req.ip ?? 'unknown',
+  keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
   handler: rateLimitHandler,
 });
 
@@ -36,7 +36,7 @@ export const searchLimiter = rateLimit({
   limit: 60,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip ?? 'unknown',
+  keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
   handler: rateLimitHandler,
 });
 
@@ -45,6 +45,6 @@ export const publicVerifyLimiter = rateLimit({
   limit: 120,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip ?? 'unknown',
+  keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
   handler: rateLimitHandler,
 });
