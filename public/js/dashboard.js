@@ -24,6 +24,10 @@ let activeMeetings = [];
 let vaultMeetings = [];
 let allTranscripts = []; // Cache for live search
 
+// Module-level auth context (set once in init, used by refresh/render)
+let _currentUser = null;
+let _onJoinRoom = null;
+
 export const dashboard = {
   init(currentUser, onJoinRoom) {
     // 1. Schedule Meeting Triggers (Sidebar, Dashboard Card & Calendar Link)
@@ -142,14 +146,12 @@ export const dashboard = {
         }
       });
     }
- 
-    // Expose click handlers to window for inline HTML onclicks
-    window.copyMeetingLink = (roomId) => ui.copyMeetingLink(roomId);
-    window.joinMeetingRoom = (roomId) => onJoinRoom(roomId, currentUser.name, 'en');
-    window.viewTranscript = (meetingId, title) => this.loadTranscript(meetingId, title);
+    // Store auth context so refresh() can use it without extra args
+    _currentUser = currentUser;
+    _onJoinRoom = onJoinRoom;
   },
  
-  async refresh(currentUser, onJoinRoom) {
+  async refresh() {
     try {
       const payload = await api.getMeetings();
       const meetings = payload.data.meetings;
@@ -157,14 +159,14 @@ export const dashboard = {
       activeMeetings = meetings.filter(m => m.status === 'scheduled');
       vaultMeetings = meetings.filter(m => m.status === 'completed' || new Date(m.scheduledAt) < new Date());
  
-      this.renderUpcoming(activeMeetings);
+      this.renderUpcoming(activeMeetings, _currentUser, _onJoinRoom);
       this.renderVault(vaultMeetings);
     } catch (err) {
       console.error('Error refreshing dashboard:', err);
     }
   },
  
-  renderUpcoming(meetings) {
+  renderUpcoming(meetings, currentUser, onJoinRoom) {
     if (!upcomingList) return;
  
     if (meetings.length === 0) {
@@ -201,19 +203,35 @@ export const dashboard = {
               <span class="meeting-time">
                 <i data-lucide="clock" class="icon-xxs"></i> ${timeString} - ${endTimeString}
               </span>
-              <span class="code-badge-inline" onclick="copyMeetingLink('${meeting.id}'); event.stopPropagation();" title="Copy meeting link: ${meeting.id}">
+              <span class="code-badge-inline btn-copy-link" data-room-id="${meeting.id}" title="Copy meeting link: ${meeting.id}">
                 <i data-lucide="copy" class="icon-xxs"></i> ${meeting.id}
               </span>
             </div>
           </div>
           <div class="meeting-action">
-            <button class="btn-join-premium" onclick="joinMeetingRoom('${meeting.id}')">Join</button>
+            <button class="btn-join-premium btn-join-room" data-room-id="${meeting.id}">Join</button>
           </div>
         </div>
       `;
     }).join('');
     
     if (window.lucide) window.lucide.createIcons();
+
+    // Event delegation — no inline onclick (blocked by CSP script-src-attr 'none')
+    upcomingList.querySelectorAll('.btn-join-room').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const roomId = btn.getAttribute('data-room-id');
+        if (roomId) onJoinRoom(roomId, currentUser.name, 'en');
+      });
+    });
+
+    upcomingList.querySelectorAll('.btn-copy-link').forEach(badge => {
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const roomId = badge.getAttribute('data-room-id');
+        if (roomId) ui.copyMeetingLink(roomId);
+      });
+    });
   },
  
   renderVault(meetings) {
@@ -271,17 +289,17 @@ export const dashboard = {
               const wordCount = meeting.wordCount || 0;
 
               return `
-                <tr class="vault-row">
-                  <td class="col-date" data-label="Date" onclick="viewTranscript('${meeting.id}', '${ui.escapeHtml(meeting.title)}')">${dateString}</td>
-                  <td class="col-title font-display-medium" data-label="Title" onclick="viewTranscript('${meeting.id}', '${ui.escapeHtml(meeting.title)}')" style="font-weight: 600; cursor: pointer;">
+                <tr class="vault-row" data-meeting-id="${meeting.id}" data-meeting-title="${ui.escapeHtml(meeting.title)}" style="cursor: pointer;">
+                  <td class="col-date" data-label="Date">${dateString}</td>
+                  <td class="col-title font-display-medium" data-label="Title" style="font-weight: 600;">
                     ${ui.escapeHtml(meeting.title)}
                   </td>
-                  <td class="col-langs" data-label="Languages" onclick="viewTranscript('${meeting.id}', '${ui.escapeHtml(meeting.title)}')">
+                  <td class="col-langs" data-label="Languages">
                     <div style="display: flex; flex-wrap: wrap; gap: 4px;">
                       ${langBadges}
                     </div>
                   </td>
-                  <td class="col-words" data-label="Words" onclick="viewTranscript('${meeting.id}', '${ui.escapeHtml(meeting.title)}')" style="color: var(--text-muted); font-size: 0.85rem;">
+                  <td class="col-words" data-label="Words" style="color: var(--text-muted); font-size: 0.85rem;">
                     ${wordCount.toLocaleString()} words
                   </td>
                   <td class="col-action" data-label="Action" style="text-align: right;">
@@ -289,7 +307,7 @@ export const dashboard = {
                       <button class="btn-download-transcript btn-icon-secondary" data-id="${meeting.id}" data-title="${ui.escapeHtml(meeting.title)}" title="Download Transcript (TXT)" style="width: 32px; height: 32px;">
                         <i data-lucide="download" style="width: 14px; height: 14px;"></i>
                       </button>
-                      <button class="btn-icon-secondary" onclick="viewTranscript('${meeting.id}', '${ui.escapeHtml(meeting.title)}')" title="View Transcript" style="width: 32px; height: 32px;">
+                      <button class="btn-view-transcript btn-icon-secondary" data-id="${meeting.id}" data-title="${ui.escapeHtml(meeting.title)}" title="View Transcript" style="width: 32px; height: 32px;">
                         <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
                       </button>
                     </div>
@@ -304,10 +322,33 @@ export const dashboard = {
 
     if (window.lucide) window.lucide.createIcons();
 
-    // Bind Download buttons in rows
+    // Event delegation — no inline onclick (blocked by CSP script-src-attr 'none')
+
+    // Clickable row → open transcript viewer
+    listBody.querySelectorAll('.vault-row').forEach(row => {
+      row.addEventListener('click', (e) => {
+        // Don't open viewer if the download button was clicked
+        if (e.target.closest('.btn-download-transcript')) return;
+        const id = row.getAttribute('data-meeting-id');
+        const title = row.getAttribute('data-meeting-title');
+        if (id) this.loadTranscript(id, title);
+      });
+    });
+
+    // View-transcript icon button
+    listBody.querySelectorAll('.btn-view-transcript').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        const title = btn.getAttribute('data-title');
+        if (id) this.loadTranscript(id, title);
+      });
+    });
+
+    // Download button
     listBody.querySelectorAll('.btn-download-transcript').forEach(btn => {
       btn.addEventListener('click', async (e) => {
-        e.stopPropagation(); // Prevent opening the transcript viewer
+        e.stopPropagation();
         const id = btn.getAttribute('data-id');
         const title = btn.getAttribute('data-title');
         try {
