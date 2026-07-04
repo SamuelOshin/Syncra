@@ -115,7 +115,7 @@ export const auth = {
     }
 
     const showSignin = () => {
-      tabsContainer.style.display = 'flex';
+      tabsContainer.style.display = 'none';
       dividerSso.style.display = 'flex';
       ssoContainer.style.display = 'flex';
       forgotPasswordForm.classList.remove('active');
@@ -177,8 +177,8 @@ export const auth = {
         const confirmPassword = document.getElementById('signup-confirm-password').value;
 
         try {
-          await api.signUp(name, email, password, confirmPassword);
-          ui.showToast('Account created! Please check your email to verify your account.', 'success');
+          const res = await api.signUp(name, email, password, confirmPassword);
+          ui.showToast(res.message || 'Account created successfully!', 'success');
           showSignin();
         } catch (err) {
           displayError(signupForm, err);
