@@ -688,11 +688,27 @@ export const chat = {
     if (!submitBtn) return;
 
     let isValid = false;
+    const errorMsg = document.getElementById('new-group-name-error');
+
     if (this.isGroupMode) {
       const groupName = document.getElementById('new-group-name').value.trim();
-      isValid = groupName.length > 0 && this.selectedUserIds.size > 0;
+      const hasParticipants = this.selectedUserIds.size > 0;
+      isValid = groupName.length > 0 && hasParticipants;
+
+      // Show inline error if they have selected participants but haven't typed a group name
+      if (errorMsg) {
+        if (hasParticipants && groupName.length === 0) {
+          errorMsg.style.display = 'flex';
+          if (window.lucide) {
+            window.lucide.createIcons();
+          }
+        } else {
+          errorMsg.style.display = 'none';
+        }
+      }
     } else {
       isValid = this.selectedUserIds.size === 1;
+      if (errorMsg) errorMsg.style.display = 'none';
     }
 
     submitBtn.disabled = !isValid;
@@ -708,7 +724,16 @@ export const chat = {
 
     if (this.isGroupMode) {
       const groupName = document.getElementById('new-group-name').value.trim();
-      if (!groupName) return;
+      if (!groupName) {
+        const errorMsg = document.getElementById('new-group-name-error');
+        if (errorMsg) {
+          errorMsg.style.display = 'flex';
+          if (window.lucide) {
+            window.lucide.createIcons();
+          }
+        }
+        return;
+      }
       payload.name = groupName;
     }
 
