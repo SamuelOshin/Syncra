@@ -9,7 +9,8 @@ import {
   forgotPasswordSchema, 
   resetPasswordSchema, 
   verifyEmailSchema,
-  resendVerificationSchema
+  resendVerificationSchema,
+  onboardingSchema
 } from './auth.schema';
 import { authLimiter, publicVerifyLimiter } from '../../middleware/rate-limit.middleware';
 import { requireAuth } from '../../middleware/auth.middleware';
@@ -21,6 +22,7 @@ router.post('/signup', authLimiter, validate(signUpSchema), (req, res, next) => 
 router.post('/signin', authLimiter, validate(signInSchema), (req, res, next) => authController.signIn(req, res, next));
 router.post('/signout', requireAuth, (req, res, next) => authController.signOut(req, res, next));
 router.get('/me', requireAuth, (req, res, next) => authController.me(req, res, next));
+router.put('/onboarding', requireAuth, validate(onboardingSchema), (req, res, next) => authController.completeOnboarding(req, res, next));
 
 router.put('/profile', requireAuth, validate(updateProfileSchema), (req, res, next) => authController.updateProfile(req, res, next));
 router.put('/password', requireAuth, validate(updatePasswordSchema), (req, res, next) => authController.updatePassword(req, res, next));

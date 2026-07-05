@@ -196,6 +196,32 @@ export const ui = {
 
     const errorInputs = formElement.querySelectorAll('input.error, select.error');
     errorInputs.forEach(input => input.classList.remove('error'));
+  },
+
+  setButtonLoading(buttonElement, isLoading = true, loadingText = 'Processing...') {
+    if (!buttonElement) return;
+    
+    if (isLoading) {
+      if (buttonElement.disabled) return;
+      buttonElement.setAttribute('data-original-html', buttonElement.innerHTML);
+      buttonElement.disabled = true;
+      buttonElement.classList.add('btn-loading');
+      buttonElement.innerHTML = `
+        <span class="btn-spinner"></span>
+        <span>${loadingText}</span>
+      `;
+    } else {
+      const originalHtml = buttonElement.getAttribute('data-original-html');
+      if (originalHtml) {
+        buttonElement.innerHTML = originalHtml;
+        buttonElement.removeAttribute('data-original-html');
+      }
+      buttonElement.disabled = false;
+      buttonElement.classList.remove('btn-loading');
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }
   }
 };
 export default ui;

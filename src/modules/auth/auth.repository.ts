@@ -21,6 +21,7 @@ export interface User {
   lockedUntil?: Date | string | null;
   emailVerified?: boolean | number;
   verificationToken?: string | null;
+  onboarded?: boolean | number;
 }
 
 export class UserRepository {

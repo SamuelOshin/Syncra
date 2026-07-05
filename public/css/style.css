@@ -581,6 +581,27 @@ body, html {
   transform: scale(0.97);
 }
 
+.btn-loading {
+  cursor: not-allowed !important;
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  border-top-color: currentColor;
+  animation: btn-spin 0.6s linear infinite;
+  margin-right: 2px;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
 .btn-primary {
   background: var(--primary);
   color: white;
@@ -5349,3 +5370,61 @@ body, html {
   color: hsl(220, 90%, 40%);
   text-decoration: underline;
 }
+
+/* ==========================================================================
+   ONBOARDING SYSTEM STYLES
+   ========================================================================== */
+.onboarding-card {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: var(--shadow-elevation-high) !important;
+  border-radius: 20px !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: onboardingScaleIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes onboardingScaleIn {
+  from {
+    transform: scale(0.96) translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.onboarding-step {
+  animation: onboardingStepSlide 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes onboardingStepSlide {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.step-dot.active {
+  background-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px hsl(224, 89%, 92%);
+}
+
+.step-dot.completed {
+  background-color: hsl(150, 84%, 37%) !important;
+}
+
+.onboarding-preview-container {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: border-color 0.2s;
+}
+
+.onboarding-preview-container.active-preview {
+  border-color: var(--primary) !important;
+}
+

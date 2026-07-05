@@ -23,6 +23,7 @@ declare global {
         name: string;
         email: string;
         preferredLanguage?: string;
+        onboarded: boolean;
       };
     }
   }
@@ -58,6 +59,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         name: user.name,
         email: user.email,
         preferredLanguage: user.preferredLanguage || 'en',
+        onboarded: !!user.onboarded,
       };
       return next();
     } catch (err: any) {
@@ -107,6 +109,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       name: user.name,
       email: user.email,
       preferredLanguage: user.preferredLanguage || 'en',
+      onboarded: !!user.onboarded,
     };
 
     return next();
@@ -140,6 +143,7 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
           name: user.name,
           email: user.email,
           preferredLanguage: user.preferredLanguage || 'en',
+          onboarded: !!user.onboarded,
         };
         return next();
       }
@@ -172,6 +176,7 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
           name: user.name,
           email: user.email,
           preferredLanguage: user.preferredLanguage || 'en',
+          onboarded: !!user.onboarded,
         };
       }
     } catch (err) {

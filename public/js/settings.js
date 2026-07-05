@@ -55,9 +55,9 @@ export const settings = {
     // 3. Preferences Update Form
     const preferencesForm = document.getElementById('preferences-update-form');
     if (preferencesForm) {
-      preferencesForm.addEventListener('submit', (e) => {
+      preferencesForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        this.savePreferences();
+        await this.savePreferences();
       });
     }
 
@@ -276,7 +276,7 @@ export const settings = {
     }
   },
 
-  savePreferences() {
+  async savePreferences() {
     const defaultLangSelect = document.getElementById('settings-default-lang');
     const defaultTargetLangSelect = document.getElementById('settings-default-target-lang');
     const notifyMeetingsCheck = document.getElementById('settings-notify-meetings');
@@ -284,12 +284,48 @@ export const settings = {
 
     if (!defaultLangSelect || !defaultTargetLangSelect) return;
 
-    localStorage.setItem('syncra_default_lang', defaultLangSelect.value);
-    localStorage.setItem('syncra_default_target_lang', defaultTargetLangSelect.value);
+    const defaultLang = defaultLangSelect.value;
+    const defaultTargetLang = defaultTargetLangSelect.value;
+
+    localStorage.setItem('syncra_default_lang', defaultLang);
+    localStorage.setItem('syncra_default_target_lang', defaultTargetLang);
     localStorage.setItem('syncra_notify_meetings', notifyMeetingsCheck ? String(notifyMeetingsCheck.checked) : 'true');
     localStorage.setItem('syncra_notify_glossary', notifyGlossaryCheck ? String(notifyGlossaryCheck.checked) : 'true');
 
-    ui.showToast('Preferences saved successfully!', 'success');
+    // Sync to database profile
+    const nameInput = document.getElementById('profile-name-input');
+    const emailInput = document.getElementById('profile-email-input');
+
+    if (nameInput && emailInput) {
+      try {
+        const res = await fetch('/api/auth/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: nameInput.value.trim(),
+            email: emailInput.value.trim(),
+            preferredLanguage: defaultTargetLang
+          }),
+        });
+
+        const payload = await res.json();
+        if (!res.ok) throw new Error(payload.message || 'Failed to update database profile');
+
+        // Update the profile lang input value in the Profile tab UI to match
+        const profileLangInput = document.getElementById('profile-lang-input');
+        if (profileLangInput) profileLangInput.value = defaultTargetLang;
+
+        // Dispatch profile updated event so other modules (like chat) sync their currentUser
+        document.dispatchEvent(new CustomEvent('syncra-profile-updated', { detail: payload.data.user }));
+        
+        ui.showToast('Preferences saved and profile synced successfully!', 'success');
+      } catch (err) {
+        console.error('Failed to sync settings to profile database:', err);
+        ui.showToast('Preferences saved locally, but database sync failed: ' + err.message, 'warning');
+      }
+    } else {
+      ui.showToast('Preferences saved successfully!', 'success');
+    }
   },
 
   async saveDeviceSelection() {
