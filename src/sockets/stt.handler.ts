@@ -10,9 +10,9 @@ export default (io: Server, socket: Socket): void => {
   let chunkCount = 0;
 
   // Handle audio stream start
-  socket.on('audio-stream-start', async (data: AudioStreamStartPayload) => {
-    const { roomId, language, speakerName } = data;
-    console.log(`[STT Socket] audio-stream-start received: roomId=${roomId}, lang=${language}, speaker=${speakerName}`);
+  socket.on('audio-stream-start', async (data: AudioStreamStartPayload & { targetLanguage?: string }) => {
+    const { roomId, language, speakerName, targetLanguage } = data;
+    console.log(`[STT Socket] audio-stream-start received: roomId=${roomId}, lang=${language}, speaker=${speakerName}, targetLanguage=${targetLanguage}`);
     
     if (!roomId || !language || !speakerName) {
       console.warn(`[STT Socket] Missing required fields in audio-stream-start payload`);
@@ -49,7 +49,7 @@ export default (io: Server, socket: Socket): void => {
 
         // Final transcript — translate and broadcast
         const startTime = Date.now();
-        const targetLang = language === 'en' ? 'fr' : 'en';
+        const targetLang = targetLanguage || (language === 'en' ? 'fr' : 'en');
         console.log(`[STT Socket] Translating final transcript: "${text}" from ${language} to ${targetLang}`);
         
         const translation = await translationManager.translate(text, language, targetLang, hostId, projectId);

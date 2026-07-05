@@ -42,7 +42,8 @@ export const speech = {
       fr: 'fr-FR',
       es: 'es-ES',
       de: 'de-DE',
-      ja: 'ja-JP'
+      ja: 'ja-JP',
+      pcm: 'en-NG'
     };
     this.recognition.lang = langLocales[userLang] || 'en-US';
     

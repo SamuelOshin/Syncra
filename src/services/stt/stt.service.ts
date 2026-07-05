@@ -111,14 +111,15 @@ export class DeepgramSTTService {
       fr: 'fr',
       es: 'es',
       de: 'de',
-      ja: 'ja'
+      ja: 'ja',
+      pcm: 'en-US' // Map Nigerian Pidgin to English Nova-3 model
     };
     const dgLanguage = langMapping[language] || 'en-US';
 
-    console.log(`[STT] Opening Deepgram connection for ${speakerName} (Language: ${dgLanguage})`);
+    console.log(`[STT] Opening Deepgram connection for ${speakerName} (Language: ${dgLanguage}, Requested: ${language})`);
 
     try {
-      const connection = await deepgram.listen.v1.connect({
+      const connectOptions: any = {
         model: 'nova-3',
         language: dgLanguage,
         encoding: 'linear16',
@@ -127,7 +128,50 @@ export class DeepgramSTTService {
         interim_results: 'true',
         utterance_end_ms: 1500,
         smart_format: 'true'
-      });
+      };
+
+      if (language === 'pcm') {
+        connectOptions.keyterm = [
+          'abeg',
+          'wahala',
+          'dey',
+          'japa',
+          'chop',
+          'sabi',
+          'pikin',
+          'wetin',
+          'comot',
+          'don',
+          'gist',
+          'kolo',
+          'shege',
+          'chook',
+          'oyibo',
+          'no wahala',
+          'how you dey',
+          'how far',
+          'wetin dey happen',
+          'na so',
+          'mumu',
+          'oga',
+          'biko',
+          'suya',
+          'jollof',
+          'fufu',
+          'garri',
+          'egusi',
+          'fit',
+          'waka',
+          'shayo',
+          'yab',
+          'una',
+          'dem',
+          'im'
+        ];
+        console.log(`[STT] Injected Nigerian Pidgin keyterms for Keyterm Prompting.`);
+      }
+
+      const connection = await deepgram.listen.v1.connect(connectOptions);
 
       // Update the connection object in the session
       const session = this.sessions.get(socketId);
