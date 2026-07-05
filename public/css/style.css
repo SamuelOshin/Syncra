@@ -682,6 +682,14 @@ body, html {
   border-color: rgba(30, 91, 240, 0.15);
 }
 
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+}
+
 .btn-block {
   width: 100%;
 }
