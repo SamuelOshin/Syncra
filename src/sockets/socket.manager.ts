@@ -14,10 +14,12 @@ export default (io: Server): void => {
     registerChatHandlers(io, socket);
     registerSTTHandlers(io, socket);
 
-    socket.on('disconnect', () => {
-      console.log(`User disconnected: ${socket.id}`);
-      // Notify all rooms the user was in
-      socket.broadcast.emit('user-left', socket.id);
+    socket.on('disconnecting', () => {
+      console.log(`User disconnecting: ${socket.id}`);
+      const roomId = socket.data.roomId;
+      if (roomId) {
+        socket.to(roomId).emit('user-left', socket.id);
+      }
     });
   });
 };
