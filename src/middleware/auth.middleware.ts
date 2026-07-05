@@ -24,6 +24,8 @@ declare global {
         email: string;
         preferredLanguage?: string;
         onboarded: boolean;
+        defaultSpeakingLanguage: string;
+        defaultTranslationLanguage: string;
       };
     }
   }
@@ -60,6 +62,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         email: user.email,
         preferredLanguage: user.preferredLanguage || 'en',
         onboarded: !!user.onboarded,
+        defaultSpeakingLanguage: user.defaultSpeakingLanguage || 'en',
+        defaultTranslationLanguage: user.defaultTranslationLanguage || 'fr',
       };
       return next();
     } catch (err: any) {
@@ -110,6 +114,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       email: user.email,
       preferredLanguage: user.preferredLanguage || 'en',
       onboarded: !!user.onboarded,
+      defaultSpeakingLanguage: user.defaultSpeakingLanguage || 'en',
+      defaultTranslationLanguage: user.defaultTranslationLanguage || 'fr',
     };
 
     return next();
@@ -144,6 +150,8 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
           email: user.email,
           preferredLanguage: user.preferredLanguage || 'en',
           onboarded: !!user.onboarded,
+          defaultSpeakingLanguage: user.defaultSpeakingLanguage || 'en',
+          defaultTranslationLanguage: user.defaultTranslationLanguage || 'fr',
         };
         return next();
       }
@@ -177,6 +185,8 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
           email: user.email,
           preferredLanguage: user.preferredLanguage || 'en',
           onboarded: !!user.onboarded,
+          defaultSpeakingLanguage: user.defaultSpeakingLanguage || 'en',
+          defaultTranslationLanguage: user.defaultTranslationLanguage || 'fr',
         };
       }
     } catch (err) {

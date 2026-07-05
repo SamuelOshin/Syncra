@@ -164,21 +164,44 @@ export const settings = {
     }
   },
 
+  applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const btnToggle = document.getElementById('btn-theme-toggle');
+    if (btnToggle) {
+      const sunIcon = btnToggle.querySelector('.theme-icon-light');
+      const moonIcon = btnToggle.querySelector('.theme-icon-dark');
+      if (theme === 'dark') {
+        if (sunIcon) sunIcon.style.display = 'block';
+        if (moonIcon) moonIcon.style.display = 'none';
+        btnToggle.setAttribute('data-tooltip', 'Switch to Light Mode');
+      } else {
+        if (sunIcon) sunIcon.style.display = 'none';
+        if (moonIcon) moonIcon.style.display = 'block';
+        btnToggle.setAttribute('data-tooltip', 'Switch to Dark Mode');
+      }
+    }
+  },
+
   loadSavedPreferences() {
     const defaultLang = localStorage.getItem('syncra_default_lang') || 'en';
     const defaultTargetLang = localStorage.getItem('syncra_default_target_lang') || 'fr';
     const notifyMeetings = localStorage.getItem('syncra_notify_meetings') !== 'false';
     const notifyGlossary = localStorage.getItem('syncra_notify_glossary') !== 'false';
+    const theme = localStorage.getItem('syncra_theme') || 'light';
 
     const defaultLangSelect = document.getElementById('settings-default-lang');
     const defaultTargetLangSelect = document.getElementById('settings-default-target-lang');
     const notifyMeetingsCheck = document.getElementById('settings-notify-meetings');
     const notifyGlossaryCheck = document.getElementById('settings-notify-glossary');
+    const themeSelect = document.getElementById('settings-theme');
 
     if (defaultLangSelect) defaultLangSelect.value = defaultLang;
     if (defaultTargetLangSelect) defaultTargetLangSelect.value = defaultTargetLang;
     if (notifyMeetingsCheck) notifyMeetingsCheck.checked = notifyMeetings;
     if (notifyGlossaryCheck) notifyGlossaryCheck.checked = notifyGlossary;
+    if (themeSelect) themeSelect.value = theme;
+
+    this.applyTheme(theme);
   },
 
   async loadDevices() {
@@ -281,16 +304,21 @@ export const settings = {
     const defaultTargetLangSelect = document.getElementById('settings-default-target-lang');
     const notifyMeetingsCheck = document.getElementById('settings-notify-meetings');
     const notifyGlossaryCheck = document.getElementById('settings-notify-glossary');
+    const themeSelect = document.getElementById('settings-theme');
 
     if (!defaultLangSelect || !defaultTargetLangSelect) return;
 
     const defaultLang = defaultLangSelect.value;
     const defaultTargetLang = defaultTargetLangSelect.value;
+    const theme = themeSelect ? themeSelect.value : 'light';
 
     localStorage.setItem('syncra_default_lang', defaultLang);
     localStorage.setItem('syncra_default_target_lang', defaultTargetLang);
     localStorage.setItem('syncra_notify_meetings', notifyMeetingsCheck ? String(notifyMeetingsCheck.checked) : 'true');
     localStorage.setItem('syncra_notify_glossary', notifyGlossaryCheck ? String(notifyGlossaryCheck.checked) : 'true');
+    localStorage.setItem('syncra_theme', theme);
+
+    this.applyTheme(theme);
 
     // Sync to database profile
     const nameInput = document.getElementById('profile-name-input');

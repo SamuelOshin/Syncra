@@ -23,6 +23,8 @@ export const pgUsers = pgTable('users', {
   emailVerified: boolean('email_verified').default(false).notNull(),
   verificationToken: varchar('verification_token', { length: 255 }),
   onboarded: boolean('onboarded').default(false).notNull(),
+  defaultSpeakingLanguage: varchar('default_speaking_language', { length: 10 }).default('en').notNull(),
+  defaultTranslationLanguage: varchar('default_translation_language', { length: 10 }).default('fr').notNull(),
 });
 
 export const sqliteUsers = sqliteTable('users', {
@@ -40,6 +42,8 @@ export const sqliteUsers = sqliteTable('users', {
   emailVerified: sqliteInteger('email_verified', { mode: 'boolean' }).default(false).notNull(),
   verificationToken: sqliteText('verification_token'),
   onboarded: sqliteInteger('onboarded', { mode: 'boolean' }).default(false).notNull(),
+  defaultSpeakingLanguage: sqliteText('default_speaking_language').default('en').notNull(),
+  defaultTranslationLanguage: sqliteText('default_translation_language').default('fr').notNull(),
 });
 
 // ==========================================

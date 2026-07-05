@@ -535,13 +535,15 @@ export class AuthController {
         return;
       }
 
-      const { name, preferredLanguage, firstProjectName, firstProjectDesc } = req.body;
+      const { name, preferredLanguage, defaultSpeakingLanguage, defaultTranslationLanguage, firstProjectName, firstProjectDesc } = req.body;
       const userId = req.user.id;
 
       // 1. Update user profile and set onboarded status to true
       await userRepository.update(userId, {
         name,
         preferredLanguage,
+        defaultSpeakingLanguage: defaultSpeakingLanguage || 'en',
+        defaultTranslationLanguage: defaultTranslationLanguage || 'fr',
         onboarded: true,
       });
 
@@ -576,6 +578,8 @@ export class AuthController {
           name,
           email: req.user.email,
           preferredLanguage,
+          defaultSpeakingLanguage: defaultSpeakingLanguage || 'en',
+          defaultTranslationLanguage: defaultTranslationLanguage || 'fr',
           onboarded: true,
         }
       });

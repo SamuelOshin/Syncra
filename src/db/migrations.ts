@@ -24,7 +24,9 @@ export async function initializeDatabase() {
           locked_until TIMESTAMP,
           email_verified BOOLEAN DEFAULT FALSE NOT NULL,
           verification_token VARCHAR(255),
-          onboarded BOOLEAN DEFAULT FALSE NOT NULL
+          onboarded BOOLEAN DEFAULT FALSE NOT NULL,
+          default_speaking_language VARCHAR(10) DEFAULT 'en' NOT NULL,
+          default_translation_language VARCHAR(10) DEFAULT 'fr' NOT NULL
         );
       `);
 
@@ -111,6 +113,8 @@ export async function initializeDatabase() {
       await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE NOT NULL;`);
       await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255);`);
       await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarded BOOLEAN DEFAULT FALSE NOT NULL;`);
+      await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS default_speaking_language VARCHAR(10) DEFAULT 'en' NOT NULL;`);
+      await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS default_translation_language VARCHAR(10) DEFAULT 'fr' NOT NULL;`);
       await dbClient.execute(sql`UPDATE users SET email_verified = TRUE WHERE email_verified IS NULL;`);
 
       await dbClient.execute(sql`
@@ -194,7 +198,9 @@ export async function initializeDatabase() {
           locked_until TEXT,
           email_verified INTEGER DEFAULT 0 NOT NULL,
           verification_token TEXT,
-          onboarded INTEGER DEFAULT 0 NOT NULL
+          onboarded INTEGER DEFAULT 0 NOT NULL,
+          default_speaking_language TEXT DEFAULT 'en' NOT NULL,
+          default_translation_language TEXT DEFAULT 'fr' NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS meetings (
@@ -270,6 +276,8 @@ export async function initializeDatabase() {
       try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0 NOT NULL;`); } catch (e) {}
       try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN verification_token TEXT;`); } catch (e) {}
       try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN onboarded INTEGER DEFAULT 0 NOT NULL;`); } catch (e) {}
+      try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN default_speaking_language TEXT DEFAULT 'en' NOT NULL;`); } catch (e) {}
+      try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN default_translation_language TEXT DEFAULT 'fr' NOT NULL;`); } catch (e) {}
       try { sqliteDb.exec(`UPDATE users SET email_verified = 1 WHERE email_verified IS NULL OR email_verified = 0;`); } catch (e) {}
 
       sqliteDb.exec(`

@@ -22,6 +22,8 @@ export interface User {
   emailVerified?: boolean | number;
   verificationToken?: string | null;
   onboarded?: boolean | number;
+  defaultSpeakingLanguage?: string;
+  defaultTranslationLanguage?: string;
 }
 
 export class UserRepository {

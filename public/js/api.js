@@ -56,11 +56,11 @@ export const api = {
     return res.json();
   },
 
-  async completeOnboarding(name, preferredLanguage, firstProjectName, firstProjectDesc) {
+  async completeOnboarding(name, preferredLanguage, defaultSpeakingLanguage, defaultTranslationLanguage, firstProjectName, firstProjectDesc) {
     const res = await fetch('/api/auth/onboarding', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, preferredLanguage, firstProjectName, firstProjectDesc })
+      body: JSON.stringify({ name, preferredLanguage, defaultSpeakingLanguage, defaultTranslationLanguage, firstProjectName, firstProjectDesc })
     });
     const payload = await res.json();
     if (!res.ok) {
