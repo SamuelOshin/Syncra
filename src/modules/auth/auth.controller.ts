@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { UserRepository, User } from './auth.repository';
+import { ProjectRepository } from '../project/project.repository';
 import { successResponse } from '../../utils/response';
 import { ConflictError, UnauthorizedError, ForbiddenError, BadRequestError, NotFoundError } from '../../utils/errors';
 import bcrypt from 'bcryptjs';
@@ -9,6 +10,7 @@ import config from '../../config';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../../utils/email';
 
 const userRepository = new UserRepository();
+const projectRepository = new ProjectRepository();
 
 export class AuthController {
   
@@ -520,6 +522,63 @@ export class AuthController {
       });
       
       successResponse(res, 200, 'Password has been reset successfully. You can now sign in.');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // PUT /api/auth/onboarding
+  async completeOnboarding(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        next(new UnauthorizedError('You must be logged in to access this resource', 'UNAUTHORIZED'));
+        return;
+      }
+
+      const { name, preferredLanguage, firstProjectName, firstProjectDesc } = req.body;
+      const userId = req.user.id;
+
+      // 1. Update user profile and set onboarded status to true
+      await userRepository.update(userId, {
+        name,
+        preferredLanguage,
+        onboarded: true,
+      });
+
+      // 2. Create the user's first project if requested
+      if (firstProjectName) {
+        const projectId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
+        await projectRepository.create({
+          id: projectId,
+          userId,
+          name: firstProjectName,
+          description: firstProjectDesc || '',
+        });
+      }
+
+      // 3. Issue a new Access Token with the updated details
+      const accessToken = jwt.sign(
+        { id: userId },
+        config.jwtAccessSecret,
+        { expiresIn: config.jwtAccessExpiresIn as any }
+      );
+
+      res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 15 * 60 * 1000,
+      });
+
+      successResponse(res, 200, 'Onboarding completed successfully', {
+        user: {
+          id: userId,
+          name,
+          email: req.user.email,
+          preferredLanguage,
+          onboarded: true,
+        }
+      });
     } catch (error) {
       next(error);
     }

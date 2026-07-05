@@ -120,6 +120,7 @@ export const auth = {
       ssoContainer.style.display = 'flex';
       forgotPasswordForm.classList.remove('active');
       resetPasswordForm.classList.remove('active');
+      signupForm.classList.remove('active');
       signinForm.classList.add('active');
       tabSignIn.classList.add('active');
       tabSignUp.classList.remove('active');
@@ -156,11 +157,14 @@ export const auth = {
         ui.clearFormErrors(signinForm);
         const email = document.getElementById('signin-email').value.trim();
         const password = document.getElementById('signin-password').value;
+        const submitBtn = signinForm.querySelector('button[type="submit"]');
 
         try {
+          ui.setButtonLoading(submitBtn, true, 'Signing In...');
           await api.signIn(email, password);
           window.location.reload();
         } catch (err) {
+          ui.setButtonLoading(submitBtn, false);
           displayError(signinForm, err);
         }
       });
@@ -175,12 +179,16 @@ export const auth = {
         const email = document.getElementById('signup-email').value.trim();
         const password = document.getElementById('signup-password').value;
         const confirmPassword = document.getElementById('signup-confirm-password').value;
+        const submitBtn = signupForm.querySelector('button[type="submit"]');
 
         try {
+          ui.setButtonLoading(submitBtn, true, 'Creating Account...');
           const res = await api.signUp(name, email, password, confirmPassword);
+          ui.setButtonLoading(submitBtn, false);
           ui.showToast(res.message || 'Account created successfully!', 'success');
           showSignin();
         } catch (err) {
+          ui.setButtonLoading(submitBtn, false);
           displayError(signupForm, err);
         }
       });
@@ -192,12 +200,16 @@ export const auth = {
         e.preventDefault();
         ui.clearFormErrors(forgotPasswordForm);
         const email = document.getElementById('forgot-email').value.trim();
+        const submitBtn = forgotPasswordForm.querySelector('button[type="submit"]');
 
         try {
+          ui.setButtonLoading(submitBtn, true, 'Sending Link...');
           await api.forgotPassword(email);
+          ui.setButtonLoading(submitBtn, false);
           ui.showToast('If this account exists, a password reset link has been sent to your email.', 'success');
           showSignin();
         } catch (err) {
+          ui.setButtonLoading(submitBtn, false);
           displayError(forgotPasswordForm, err);
         }
       });
@@ -211,14 +223,18 @@ export const auth = {
         const token = document.getElementById('reset-token').value;
         const password = document.getElementById('reset-password').value;
         const confirmPassword = document.getElementById('reset-confirm-password').value;
+        const submitBtn = resetPasswordForm.querySelector('button[type="submit"]');
 
         try {
+          ui.setButtonLoading(submitBtn, true, 'Resetting Password...');
           await api.resetPassword(token, password, confirmPassword);
+          ui.setButtonLoading(submitBtn, false);
           ui.showToast('Password reset successful! You can now sign in.', 'success');
           // Clear hash parameter
           window.location.hash = '';
           showSignin();
         } catch (err) {
+          ui.setButtonLoading(submitBtn, false);
           displayError(resetPasswordForm, err);
         }
       });

@@ -5,6 +5,7 @@
 import { api } from './api.js';
 import { ui } from './ui.js';
 import { auth } from './auth.js';
+import { onboarding } from './onboarding.js';
 import { dashboard } from './dashboard.js';
 import { webrtc } from './webrtc.js';
 import { speech } from './speech.js';
@@ -173,13 +174,37 @@ async function checkSessionAndRoute() {
       await new Promise(resolve => setTimeout(resolve, 800 - elapsed));
     }
 
+    if (!currentUser.onboarded) {
+      showScreen(dashboardScreen);
+      onboarding.init(currentUser, async (updatedUser) => {
+        currentUser = updatedUser;
+        document.dispatchEvent(new CustomEvent('syncra-profile-updated', { detail: updatedUser }));
+        profileName.textContent = currentUser.name;
+        welcomeName.textContent = currentUser.name;
+        userAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
+        if (dropdownUserAvatar) {
+          dropdownUserAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
+        }
+        
+        if (urlRoomId) {
+          joinRoom(urlRoomId, currentUser.name, currentUser.preferredLanguage || 'en');
+        } else {
+          dashboard.init(currentUser, joinRoom);
+          window.syncraJoinRoom = (roomId) => joinRoom(roomId, currentUser.name, currentUser.preferredLanguage || 'en');
+          await dashboard.refresh();
+        }
+      });
+      onboarding.show();
+      return;
+    }
+
     if (urlRoomId) {
       // Authenticated user direct navigation -> bypass join form
-      joinRoom(urlRoomId, currentUser.name, 'en');
+      joinRoom(urlRoomId, currentUser.name, currentUser.preferredLanguage || 'en');
     } else {
       showScreen(dashboardScreen);
       dashboard.init(currentUser, joinRoom);
-      window.syncraJoinRoom = (roomId) => joinRoom(roomId, currentUser.name, 'en');
+      window.syncraJoinRoom = (roomId) => joinRoom(roomId, currentUser.name, currentUser.preferredLanguage || 'en');
       await dashboard.refresh();
     }
   } catch (err) {

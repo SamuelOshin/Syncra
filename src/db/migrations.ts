@@ -23,7 +23,8 @@ export async function initializeDatabase() {
           failed_attempts INT DEFAULT 0 NOT NULL,
           locked_until TIMESTAMP,
           email_verified BOOLEAN DEFAULT FALSE NOT NULL,
-          verification_token VARCHAR(255)
+          verification_token VARCHAR(255),
+          onboarded BOOLEAN DEFAULT FALSE NOT NULL
         );
       `);
 
@@ -109,6 +110,7 @@ export async function initializeDatabase() {
       await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP;`);
       await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE NOT NULL;`);
       await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255);`);
+      await dbClient.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarded BOOLEAN DEFAULT FALSE NOT NULL;`);
       await dbClient.execute(sql`UPDATE users SET email_verified = TRUE WHERE email_verified IS NULL;`);
 
       await dbClient.execute(sql`
@@ -191,7 +193,8 @@ export async function initializeDatabase() {
           failed_attempts INTEGER DEFAULT 0 NOT NULL,
           locked_until TEXT,
           email_verified INTEGER DEFAULT 0 NOT NULL,
-          verification_token TEXT
+          verification_token TEXT,
+          onboarded INTEGER DEFAULT 0 NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS meetings (
@@ -266,6 +269,7 @@ export async function initializeDatabase() {
       try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN locked_until TEXT;`); } catch (e) {}
       try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0 NOT NULL;`); } catch (e) {}
       try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN verification_token TEXT;`); } catch (e) {}
+      try { sqliteDb.exec(`ALTER TABLE users ADD COLUMN onboarded INTEGER DEFAULT 0 NOT NULL;`); } catch (e) {}
       try { sqliteDb.exec(`UPDATE users SET email_verified = 1 WHERE email_verified IS NULL OR email_verified = 0;`); } catch (e) {}
 
       sqliteDb.exec(`

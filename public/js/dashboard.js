@@ -221,7 +221,7 @@ export const dashboard = {
     upcomingList.querySelectorAll('.btn-join-room').forEach(btn => {
       btn.addEventListener('click', () => {
         const roomId = btn.getAttribute('data-room-id');
-        if (roomId) onJoinRoom(roomId, currentUser.name, 'en');
+        if (roomId) onJoinRoom(roomId, currentUser.name, currentUser.preferredLanguage || 'en');
       });
     });
 

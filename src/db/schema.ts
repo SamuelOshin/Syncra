@@ -22,6 +22,7 @@ export const pgUsers = pgTable('users', {
   lockedUntil: timestamp('locked_until'),
   emailVerified: boolean('email_verified').default(false).notNull(),
   verificationToken: varchar('verification_token', { length: 255 }),
+  onboarded: boolean('onboarded').default(false).notNull(),
 });
 
 export const sqliteUsers = sqliteTable('users', {
@@ -38,6 +39,7 @@ export const sqliteUsers = sqliteTable('users', {
   lockedUntil: sqliteText('locked_until'),
   emailVerified: sqliteInteger('email_verified', { mode: 'boolean' }).default(false).notNull(),
   verificationToken: sqliteText('verification_token'),
+  onboarded: sqliteInteger('onboarded', { mode: 'boolean' }).default(false).notNull(),
 });
 
 // ==========================================

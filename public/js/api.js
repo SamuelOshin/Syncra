@@ -56,6 +56,21 @@ export const api = {
     return res.json();
   },
 
+  async completeOnboarding(name, preferredLanguage, firstProjectName, firstProjectDesc) {
+    const res = await fetch('/api/auth/onboarding', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, preferredLanguage, firstProjectName, firstProjectDesc })
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      const err = new Error(payload.message || 'Onboarding failed');
+      err.payload = payload;
+      throw err;
+    }
+    return payload;
+  },
+
   async getMeetings() {
     const res = await fetch('/api/meetings');
     if (!res.ok) throw new Error('Failed to fetch meetings');
