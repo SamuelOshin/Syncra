@@ -75,6 +75,10 @@ export const greenRoom = {
     if (this.modal) {
       this.modal.classList.remove('active');
     }
+    const overlay = document.getElementById('green-room-connecting');
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
   },
 
   async loadDevices() {
@@ -86,12 +90,17 @@ export const greenRoom = {
     micSelect.innerHTML = '<option value="">Detecting microphones...</option>';
 
     try {
-      // Trigger media permissions first
-      const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true }).catch(() => null);
-      if (tempStream) {
-        tempStream.getTracks().forEach(track => track.stop());
+      const preferredCam = localStorage.getItem('syncra_preferred_camera_id');
+      const preferredMic = localStorage.getItem('syncra_preferred_mic_id');
+
+      // Start the preview first (which requests permissions and activates camera/mic)
+      try {
+        await this.startPreview(preferredCam, preferredMic);
+      } catch (previewErr) {
+        console.warn('Green Room preview failed to start, attempting to enumerate devices anyway:', previewErr);
       }
 
+      // Now that permissions are granted, enumerate the devices to get real labels
       const devices = await navigator.mediaDevices.enumerateDevices();
       const cameras = devices.filter(d => d.kind === 'videoinput');
       const microphones = devices.filter(d => d.kind === 'audioinput');
@@ -106,18 +115,33 @@ export const greenRoom = {
         `<option value="${m.deviceId}">${ui.escapeHtml(m.label || `Microphone ${i + 1}`)}</option>`
       ).join('') || '<option value="">No microphone detected</option>';
 
-      // Pre-select active preferences if previously saved in localStorage
-      const preferredCam = localStorage.getItem('syncra_preferred_camera_id');
-      const preferredMic = localStorage.getItem('syncra_preferred_mic_id');
+      // Determine active device IDs from the stream
+      let activeCamId = preferredCam;
+      let activeMicId = preferredMic;
 
-      if (preferredCam && cameras.some(c => c.deviceId === preferredCam)) {
-        cameraSelect.value = preferredCam;
-      }
-      if (preferredMic && microphones.some(m => m.deviceId === preferredMic)) {
-        micSelect.value = preferredMic;
+      if (this.previewStream) {
+        const videoTrack = this.previewStream.getVideoTracks()[0];
+        const audioTrack = this.previewStream.getAudioTracks()[0];
+        if (videoTrack) {
+          activeCamId = videoTrack.getSettings().deviceId || preferredCam;
+        }
+        if (audioTrack) {
+          activeMicId = audioTrack.getSettings().deviceId || preferredMic;
+        }
       }
 
-      this.startPreview();
+      // Pre-select active options
+      if (activeCamId && cameras.some(c => c.deviceId === activeCamId)) {
+        cameraSelect.value = activeCamId;
+      } else if (cameras.length > 0) {
+        cameraSelect.value = cameras[0].deviceId;
+      }
+
+      if (activeMicId && microphones.some(m => m.deviceId === activeMicId)) {
+        micSelect.value = activeMicId;
+      } else if (microphones.length > 0) {
+        micSelect.value = microphones[0].deviceId;
+      }
     } catch (err) {
       console.error('Error listing devices in Green Room precheck:', err);
       cameraSelect.innerHTML = '<option value="">Permission denied</option>';
@@ -125,7 +149,7 @@ export const greenRoom = {
     }
   },
 
-  async startPreview() {
+  async startPreview(preferredCamId, preferredMicId) {
     this.cleanupStream();
 
     const videoPreview = document.getElementById('green-room-video-preview');
@@ -136,22 +160,27 @@ export const greenRoom = {
 
     if (!videoPreview) return;
 
-    const cameraId = cameraSelect?.value;
-    const micId = micSelect?.value;
+    const cameraId = preferredCamId !== undefined ? preferredCamId : cameraSelect?.value;
+    const micId = preferredMicId !== undefined ? preferredMicId : micSelect?.value;
 
-    if (!cameraId && !micId) return;
+    const hasCameraOptions = cameraSelect && cameraSelect.options.length > 1;
+    const hasMicOptions = micSelect && micSelect.options.length > 1;
+
+    if (hasCameraOptions && hasMicOptions && !cameraId && !micId) return;
 
     try {
       const constraints = {
-        video: cameraId ? { deviceId: { exact: cameraId } } : false,
-        audio: micId ? { deviceId: { exact: micId } } : false
+        video: cameraId ? { deviceId: { ideal: cameraId } } : (hasCameraOptions && !cameraId ? false : true),
+        audio: micId ? { deviceId: { ideal: micId } } : (hasMicOptions && !micId ? false : true)
       };
+
+      if (!constraints.video && !constraints.audio) return;
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       this.previewStream = stream;
 
       // 1. Setup Video Rendering
-      if (cameraId && stream.getVideoTracks().length > 0) {
+      if (stream.getVideoTracks().length > 0) {
         videoPreview.srcObject = stream;
         videoPreview.style.display = 'block';
         if (placeholder) placeholder.style.display = 'none';
@@ -164,7 +193,7 @@ export const greenRoom = {
       }
 
       // 2. Setup Real-time Audio Level Visualizer
-      if (micId && stream.getAudioTracks().length > 0) {
+      if (stream.getAudioTracks().length > 0) {
         this.setupAudioMeter(stream);
       } else {
         const levelEl = document.getElementById('green-room-mic-level');
@@ -182,6 +211,7 @@ export const greenRoom = {
       if (container) container.classList.remove('active-preview');
       const levelEl = document.getElementById('green-room-mic-level');
       if (levelEl) levelEl.style.width = '0%';
+      throw err;
     }
   },
 
@@ -244,7 +274,14 @@ export const greenRoom = {
     if (selectedSettings.cameraId) localStorage.setItem('syncra_preferred_camera_id', selectedSettings.cameraId);
     if (selectedSettings.micId) localStorage.setItem('syncra_preferred_mic_id', selectedSettings.micId);
 
-    this.hide();
+    // Stop local green room preview streams to release device hardware
+    this.cleanupStream();
+
+    // Show the connecting overlay inside the modal card
+    const overlay = document.getElementById('green-room-connecting');
+    if (overlay) {
+      overlay.style.display = 'flex';
+    }
 
     if (this.onJoin) {
       this.onJoin(selectedSettings);

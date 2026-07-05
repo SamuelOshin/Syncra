@@ -34,7 +34,8 @@ export const LiveKitEngine = {
       throw err;
     }
 
-    const { Room, RoomEvent, Track } = window.LiveKitClient;
+    const sdk = window.LivekitClient || window.LiveKitClient;
+    const { Room, RoomEvent, Track } = sdk;
 
     // 3. Configure the LiveKit Room
     this.room = new Room({
@@ -76,15 +77,28 @@ export const LiveKitEngine = {
       }
     });
 
+    this.room.on(RoomEvent.ParticipantConnected, (participant) => {
+      console.log(`[LiveKitEngine] Participant connected: ${participant.identity}`);
+      if (typeof window.syncraUpdateParticipants === 'function') {
+        window.syncraUpdateParticipants();
+      }
+    });
+
     this.room.on(RoomEvent.ParticipantDisconnected, (participant) => {
       console.log(`[LiveKitEngine] Participant disconnected: ${participant.identity}`);
       this.removeRemoteVideo(participant);
+      if (typeof window.syncraUpdateParticipants === 'function') {
+        window.syncraUpdateParticipants();
+      }
     });
 
     // 5. Connect to the room and publish local tracks
     try {
       await this.room.connect(url, token);
       console.log(`[LiveKitEngine] Connected to room: ${roomId} as ${username}`);
+      if (typeof window.syncraUpdateParticipants === 'function') {
+        window.syncraUpdateParticipants();
+      }
 
       // Set local avatar initials
       const localAvatarCircle = document.getElementById('local-avatar-circle');
@@ -95,20 +109,48 @@ export const LiveKitEngine = {
       const cameraDeviceId = localStorage.getItem('syncra_preferred_camera_id');
       const micDeviceId = localStorage.getItem('syncra_preferred_mic_id');
 
-      // Enable local tracks with saved constraints
-      await this.room.localParticipant.enableCameraAndMicrophone({
-        video: cameraDeviceId ? { deviceId: { exact: cameraDeviceId } } : true,
-        audio: micDeviceId ? { 
-          deviceId: { exact: micDeviceId },
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        } : {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
+      // Enable local tracks with saved constraints and fallbacks
+      try {
+        await this.room.localParticipant.enableCameraAndMicrophone({
+          video: cameraDeviceId ? { deviceId: { exact: cameraDeviceId } } : true,
+          audio: micDeviceId ? { 
+            deviceId: { exact: micDeviceId },
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          } : {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+      } catch (mediaErr) {
+        console.warn('[LiveKitEngine] Failed to enable camera+mic, trying mic-only...', mediaErr);
+        try {
+          // Use the correct API for mic-only — do NOT call enableCameraAndMicrophone
+          await this.room.localParticipant.setMicrophoneEnabled(true, micDeviceId ? {
+            deviceId: { exact: micDeviceId },
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          } : {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          });
+          console.log('[LiveKitEngine] Mic-only fallback succeeded. Camera disabled.');
+          this.isCameraOff = true;
+          const localPlaceholder = document.getElementById('local-avatar-placeholder');
+          if (localPlaceholder) localPlaceholder.classList.add('active');
+        } catch (audioErr) {
+          console.error('[LiveKitEngine] Mic-only fallback also failed. Joining as viewer.', audioErr);
+          ui.showToast('Microphone and camera unavailable. Joining as viewer.', 'warning');
+          this.isMuted = true;
+          this.isCameraOff = true;
+          const localPlaceholder = document.getElementById('local-avatar-placeholder');
+          if (localPlaceholder) localPlaceholder.classList.add('active');
         }
-      });
+      }
 
       // Attach local video to UI
       const localVideo = document.getElementById('local-video');
@@ -141,7 +183,7 @@ export const LiveKitEngine = {
   },
 
   ensureSdkLoaded() {
-    if (window.LiveKitClient) return Promise.resolve();
+    if (window.LivekitClient || window.LiveKitClient) return Promise.resolve();
     
     const loadScript = (src) => {
       return new Promise((resolve, reject) => {
@@ -267,7 +309,8 @@ export const LiveKitEngine = {
 
   async switchDevice(type, deviceId) {
     if (!this.room || !this.room.localParticipant) return;
-    const { Track } = window.LiveKitClient;
+    const sdk = window.LivekitClient || window.LiveKitClient;
+    const { Track } = sdk;
 
     try {
       if (type === 'video') {

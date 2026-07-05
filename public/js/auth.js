@@ -279,6 +279,18 @@ export const auth = {
       e.preventDefault();
       tabSignIn?.click();
     });
+
+    // Check initial hash for direct routing to signup/register
+    const initialHash = window.location.hash;
+    if (initialHash === '#signup' || initialHash === '#register') {
+      setTimeout(() => {
+        tabSignUp?.click();
+      }, 50);
+    } else if (initialHash === '#signin' || initialHash === '#login') {
+      setTimeout(() => {
+        tabSignIn?.click();
+      }, 50);
+    }
   }
 };
 export default auth;

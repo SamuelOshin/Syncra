@@ -145,7 +145,7 @@ body, html {
   left: 0;
   width: 100%;
   height: 100%;
-  display: flex;
+  display: none;
   flex-direction: column;
   opacity: 0;
   pointer-events: none;
@@ -154,6 +154,7 @@ body, html {
 }
 
 .screen.active {
+  display: flex;
   opacity: 1;
   pointer-events: auto;
   z-index: 10;
@@ -820,7 +821,16 @@ textarea.error:focus {
   padding-left: 8px;
 }
 
-.sidebar-brand > svg {
+.sidebar-brand-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  flex-grow: 1;
+}
+
+.sidebar-brand-link svg {
   width: 28px;
   height: 28px;
   color: var(--primary);
@@ -5895,6 +5905,189 @@ input:checked + .slider:before {
 .btn-copy-room-link svg {
   width: 14px;
   height: 14px;
+}
+
+/* Active Participants List Box Styles */
+.call-participants-box {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-secondary);
+}
+
+.participants-box-header {
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.call-participants-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.call-participant-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text-body);
+}
+
+.call-participant-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.call-participant-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--success);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--success-light);
+}
+
+.call-participant-name {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.call-participant-tag {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background-color: var(--bg-main);
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+}
+
+/* Upgraded Caption Card UI matching reference image */
+.caption-lang-badge {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(30, 91, 240, 0.08);
+  padding: 2px 6px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.caption-card.me .caption-lang-badge {
+  color: var(--accent);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.caption-stream .caption-card {
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 4px 0 4px 16px !important;
+  margin-bottom: 12px !important;
+  max-width: 100% !important;
+  align-self: stretch !important;
+  box-shadow: none !important;
+}
+
+.caption-stream .caption-card.them {
+  border-left: 3px solid var(--primary) !important;
+}
+
+.caption-stream .caption-card.me {
+  border-left: 3px solid var(--accent) !important;
+}
+
+.caption-stream .caption-card .speaker-name {
+  font-family: var(--font-display) !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.caption-stream .caption-card.them .speaker-name {
+  color: var(--primary) !important;
+}
+
+.caption-stream .caption-card.me .speaker-name {
+  color: var(--accent) !important;
+}
+
+.caption-stream .caption-card .original {
+  font-family: var(--font-body) !important;
+  color: var(--text-main) !important;
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  font-style: normal !important;
+  text-shadow: none !important;
+  margin-top: 4px !important;
+}
+
+.caption-stream .caption-card .translated {
+  font-family: var(--font-body) !important;
+  color: var(--accent) !important;
+  font-size: 0.92rem !important;
+  font-style: italic !important;
+  font-weight: 500 !important;
+  text-shadow: none !important;
+  margin-top: 2px !important;
+}
+
+.caption-stream .caption-card.me .translated {
+  color: var(--accent) !important;
+}
+
+/* Hide active participant box on mobile screen */
+@media (max-width: 767px) {
+  .call-participants-box {
+    display: none !important;
+  }
+}
+
+/* Green Room Connecting Overlay */
+.green-room-connecting-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-glass, rgba(15, 23, 42, 0.75));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: slideDownFadeIn 0.3s ease-out;
+}
+
+.green-room-connecting-overlay .loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  color: var(--text-main);
+  padding: 24px;
+}
+
+.green-room-connecting-overlay .spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-left-color: var(--primary, #3B82F6);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 

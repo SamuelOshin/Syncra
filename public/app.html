@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Syncra - Enterprise Real-Time Translation</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  
+  <!-- Google Fonts (Non-blocking Asynchronous Load) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link id="gfonts-css" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print">
+  <script>
+    document.getElementById('gfonts-css').addEventListener('load', function() {
+      this.media = 'all';
+    });
+  </script>
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  </noscript>
+  
+  <!-- Lucide Icons (Deferred) -->
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+  
+  <!-- Critical CSS Inlining for Splash Screen -->
+  <style>
+    :root {
+      --primary: hsl(224, 89%, 55%);
+      --primary-light: hsl(224, 100%, 97%);
+      --bg-main: hsl(210, 40%, 98%);
+      --bg-secondary: hsl(0, 0%, 100%);
+      --border-subtle: hsl(210, 40%, 93%);
+      --text-main: hsl(222, 47%, 11%);
+      --text-muted: hsl(215, 16%, 47%);
+      --font-display: 'Plus Jakarta Sans', 'Outfit', -apple-system, sans-serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --shadow-elevation-low: 
+        0px 1px 2px rgba(0, 0, 0, 0.01),
+        0px 2px 4px rgba(0, 0, 0, 0.015),
+        0px 8px 16px rgba(0, 0, 0, 0.02);
+    }
+    [data-theme="dark"] {
+      --primary: hsl(224, 92%, 62%);
+      --primary-light: hsl(224, 30%, 13%);
+      --bg-main: hsl(222, 47%, 6%);
+      --bg-secondary: hsl(222, 40%, 10%);
+      --border-subtle: hsl(222, 25%, 18%);
+      --text-main: hsl(210, 40%, 98%);
+      --text-muted: hsl(215, 16%, 62%);
+      --shadow-elevation-low: 
+        0px 1px 2px rgba(0, 0, 0, 0.3),
+        0px 2px 4px rgba(0, 0, 0, 0.35);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-main);
+      font-family: var(--font-body);
+      font-size: 16px;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    #app {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      z-index: 1;
+    }
+    .screen.active {
+      display: flex;
+      opacity: 1;
+      pointer-events: auto;
+      z-index: 10;
+    }
+    #splash-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, var(--bg-secondary) 0%, var(--bg-main) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.4s;
+    }
+    #splash-screen:not(.active) {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .splash-container {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-lg);
+      max-width: 320px;
+    }
+    .splash-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .splash-logo .logo-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      margin-bottom: var(--space-md);
+      box-shadow: var(--shadow-elevation-low);
+    }
+    .splash-logo .logo-icon svg {
+      width: 36px;
+      height: 36px;
+    }
+    .splash-title {
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.03em;
+      margin-bottom: var(--space-xs);
+    }
+    .splash-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .splash-loader {
+      width: 180px;
+      height: 4px;
+      background: var(--border-subtle);
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+    .loader-bar {
+      width: 100%;
+      height: 100%;
+      background: var(--primary);
+      border-radius: 2px;
+      position: absolute;
+      left: -100%;
+      animation: loading-bar 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes loading-bar {
+      0% { left: -100%; width: 30%; }
+      50% { left: 0%; width: 60%; }
+      100% { left: 100%; width: 30%; }
+    }
+    .animate-pulse {
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(30, 91, 240, 0.2);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px 8px rgba(30, 91, 240, 0.1);
+      }
+    }
+  </style>
+  
+  <!-- CSS Style -->
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <!-- Theme Initialization (Prevents light-theme flash) -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('syncra_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+</head>
+<body>
+
+  <!-- App Container -->
+  <div id="app">
+    
+    <!-- 0. SPLASH / LOADING SCREEN -->
+    <div id="splash-screen" class="screen active">
+      <div class="splash-container">
+        <div class="splash-logo">
+          <div class="logo-icon animate-pulse" id="splash-logo-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-aperture">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="14.31" y1="8" x2="20.05" y2="17.94"></line>
+              <line x1="9.69" y1="8" x2="21.17" y2="8"></line>
+              <line x1="7.38" y1="12" x2="13.12" y2="2.06"></line>
+              <line x1="9.69" y1="16" x2="3.95" y2="6.06"></line>
+              <line x1="14.31" y1="16" x2="2.83" y2="16"></line>
+              <line x1="16.62" y1="12" x2="10.88" y2="21.94"></line>
+            </svg>
+          </div>
+          <h1 class="splash-title">Syncra</h1>
+          <p class="splash-subtitle" id="splash-status">Securing connection & loading workspace...</p>
+        </div>
+        
+        <!-- Loading Bar -->
+        <div class="splash-loader" id="splash-loader">
+          <div class="loader-bar"></div>
+        </div>
+
+        <!-- Network Error State (Hidden by default) -->
+        <div class="splash-error hidden" id="splash-error">
+          <button class="btn btn-secondary" id="btn-splash-retry">
+            <i data-lucide="refresh-cw"></i>
+            <span>Retry Connection</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 1. AUTH SCREEN (Login / Signup) -->
+    <div id="auth-screen" class="screen">
+      <div class="auth-container">
+        <!-- Left Panel: Forms & SSO -->
+        <div class="auth-form-panel">
+          <!-- Brand Logo Header -->
+          <div class="auth-brand">
+            <i data-lucide="aperture"></i>
+            <span>Syncra</span>
+          </div>
+
+          <!-- Hidden Auth Tabs for JS compatibility -->
+          <div class="auth-tabs" id="auth-tabs-container" style="display: none !important;">
+            <button id="tab-signin" class="auth-tab active">Sign In</button>
+            <button id="tab-signup" class="auth-tab">Sign Up</button>
+          </div>
+
+          <!-- Forms Wrapper -->
+          <div class="auth-forms-wrapper">
+            <!-- Sign In Form -->
+            <form id="signin-form" class="auth-form active">
+              <div class="auth-header">
+                <h2>Sign in to Syncra</h2>
+                <p>One solution for all your real-time translation needs</p>
+              </div>
+              
+              <div class="input-group">
+                <label for="signin-email">Email Address</label>
+                <div class="input-wrapper">
+                  <i data-lucide="mail"></i>
+                  <input type="email" id="signin-email" placeholder="you@company.com" required autocomplete="email">
+                </div>
+              </div>
+              
+              <div class="input-group">
+                <div class="label-header">
+                  <label for="signin-password">Password</label>
+                </div>
+                <div class="input-wrapper">
+                  <i data-lucide="lock"></i>
+                  <input type="password" id="signin-password" placeholder="••••••••" required autocomplete="current-password">
+                  <button type="button" class="btn-toggle-password" tabindex="-1">
+                    <i data-lucide="eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Remember Me & Forgot Password in one line -->
+              <div class="auth-options">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="signin-remember">
+                  <span>Remember me</span>
+                </label>
+                <a href="#" id="link-forgot-password" class="auth-link">Forgot Password?</a>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
+                <span>Sign In</span>
+                <i data-lucide="log-in"></i>
+              </button>
+
+              <div class="auth-footer-text">
+                Don't have an account? <a href="#" id="link-goto-signup" class="auth-link">Sign Up</a>
+              </div>
+            </form>
+
+            <!-- Sign Up Form -->
+            <form id="signup-form" class="auth-form">
+              <div class="auth-header">
+                <h2>Create an Account</h2>
+                <p>Start translating and collaborating in real-time</p>
+              </div>
+
+              <div class="input-group">
+                <label for="signup-name">Full Name</label>
+                <div class="input-wrapper">
+                  <i data-lucide="user"></i>
+                  <input type="text" id="signup-name" placeholder="John Doe" required autocomplete="name">
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="signup-email">Email Address</label>
+                <div class="input-wrapper">
+                  <i data-lucide="mail"></i>
+                  <input type="email" id="signup-email" placeholder="you@company.com" required autocomplete="email">
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="signup-password">Password</label>
+                <div class="input-wrapper">
+                  <i data-lucide="lock"></i>
+                  <input type="password" id="signup-password" placeholder="At least 8 characters (1 uppercase, 1 number, 1 symbol)" required autocomplete="new-password">
+                  <button type="button" class="btn-toggle-password" tabindex="-1">
+                    <i data-lucide="eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="signup-confirm-password">Confirm Password</label>
+                <div class="input-wrapper">
+                  <i data-lucide="lock"></i>
+                  <input type="password" id="signup-confirm-password" placeholder="Confirm your password" required autocomplete="new-password">
+                  <button type="button" class="btn-toggle-password" tabindex="-1">
+                    <i data-lucide="eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
+                <span>Create Account</span>
+                <i data-lucide="user-plus"></i>
+              </button>
+
+              <div class="auth-footer-text">
+                Already have an account? <a href="#" id="link-goto-signin" class="auth-link">Sign In</a>
+              </div>
+            </form>
+
+            <!-- Forgot Password Form (Hidden by default) -->
+            <form id="forgot-password-form" class="auth-form">
+              <div class="auth-header">
+                <h2>Forgot Password?</h2>
+                <p>Enter your email address and we'll send you a password reset link.</p>
+              </div>
+
+              <div class="input-group">
+                <label for="forgot-email">Email Address</label>
+                <div class="input-wrapper">
+                  <i data-lucide="mail"></i>
+                  <input type="email" id="forgot-email" placeholder="you@company.com" required>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
+                <span>Send Reset Link</span>
+                <i data-lucide="send"></i>
+              </button>
+
+              <div class="auth-footer-text">
+                <a href="#" id="link-back-to-signin" class="auth-link">Back to Sign In</a>
+              </div>
+            </form>
+
+            <!-- Reset Password Form (Hidden by default) -->
+            <form id="reset-password-form" class="auth-form">
+              <input type="hidden" id="reset-token">
+              <div class="auth-header">
+                <h2>Reset Password</h2>
+                <p>Choose a strong new password for your account recovery.</p>
+              </div>
+
+              <div class="input-group">
+                <label for="reset-password">New Password</label>
+                <div class="input-wrapper">
+                  <i data-lucide="lock"></i>
+                  <input type="password" id="reset-password" placeholder="At least 8 characters (1 uppercase, 1 number, 1 symbol)" required autocomplete="new-password">
+                  <button type="button" class="btn-toggle-password" tabindex="-1">
+                    <i data-lucide="eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="reset-confirm-password">Confirm New Password</label>
+                <div class="input-wrapper">
+                  <i data-lucide="lock"></i>
+                  <input type="password" id="reset-confirm-password" placeholder="Confirm new password" required autocomplete="new-password">
+                  <button type="button" class="btn-toggle-password" tabindex="-1">
+                    <i data-lucide="eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
+                <span>Reset Password</span>
+                <i data-lucide="check"></i>
+              </button>
+
+              <div class="auth-footer-text">
+                <a href="#" id="link-reset-to-signin" class="auth-link">Cancel & Back to Sign In</a>
+              </div>
+            </form>
+          </div>
+
+          <!-- SSO Buttons Section -->
+          <div class="auth-sso-section">
+            <div class="divider" id="auth-divider-sso">
+              <span>or continue with</span>
+            </div>
+
+            <div class="sso-buttons" id="auth-sso-container">
+              <a href="/api/auth/google" class="btn btn-secondary btn-sso">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="margin-right: 8px;">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                <span>Google</span>
+              </a>
+              <a href="/api/auth/microsoft" class="btn btn-secondary btn-sso">
+                <i data-lucide="terminal"></i>
+                <span>Microsoft</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel: Showcase (Desktop Only) -->
+        <div class="auth-showcase-panel">
+          <div class="showcase-content">
+            <div class="showcase-card">
+              <img src="/auth_showcase.png" alt="Syncra Workspace Mockup">
+            </div>
+            
+            <div class="showcase-text">
+              <h3>Comprehensive Translation for Enterprise</h3>
+              <p>Syncra bridges communication gaps in real-time, offering instant voice translation, live WebRTC meetings, and team chat spaces with zero friction.</p>
+            </div>
+            
+            <div class="showcase-indicator">
+              <span class="dot active"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. GUEST ENTRY SCREEN (For direct room links) -->
+    <div id="entry-screen" class="screen">
+      <div class="glass-card entry-card">
+        <div class="logo-area">
+          <div class="logo-icon">
+            <i data-lucide="aperture"></i>
+          </div>
+          <h1>Syncra</h1>
+          <p class="subtitle">Join as Guest Observer</p>
+        </div>
+        
+        <form id="join-form">
+          <div class="input-group">
+            <label for="room-input">Room Name</label>
+            <div class="input-wrapper">
+              <i data-lucide="hash"></i>
+              <input type="text" id="room-input" placeholder="e.g. benin-sync" required autocomplete="off" readonly>
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label for="name-input">Your Name</label>
+            <div class="input-wrapper">
+              <i data-lucide="user"></i>
+              <input type="text" id="name-input" placeholder="e.g. Guest Observer" required autocomplete="off">
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label for="lang-input">I Speak / Je parle</label>
+            <div class="input-wrapper">
+              <i data-lucide="volume-2"></i>
+              <select id="lang-input" required>
+                <option value="en" selected>English</option>
+                <option value="fr">Français (French)</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="ja">日本語 (Japanese)</option>
+              </select>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn btn-primary btn-block">
+            <span>Join Meeting</span>
+            <i data-lucide="arrow-right"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 3. SYNCRA HUB (Dashboard) -->
+    <div id="dashboard-screen" class="screen">
+      <div class="dashboard-container">
+        
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar">
+          <div class="sidebar-brand">
+            <a href="/" class="sidebar-brand-link">
+              <i data-lucide="aperture"></i>
+              <div class="brand-meta">
+                <span class="brand-name">Syncra</span>
+                <span class="brand-version">ENTERPRISE V0.1</span>
+              </div>
+            </a>
+            <button id="btn-sidebar-toggle" class="btn-sidebar-toggle" title="Collapse Sidebar">
+              <i data-lucide="sidebar"></i>
+            </button>
+          </div>
+          
+          <nav class="sidebar-menu">
+            <a href="#" class="menu-item active" id="btn-sidebar-dashboard" data-tooltip="Dashboard">
+              <i data-lucide="layout-dashboard"></i>
+              <span>Dashboard</span>
+              <span class="active-indicator"></span>
+            </a>
+            <a href="#" class="menu-item" id="btn-sidebar-calendar" data-tooltip="Calendar">
+              <i data-lucide="calendar"></i>
+              <span>Calendar</span>
+            </a>
+            <a href="#" class="menu-item" id="btn-sidebar-projects" data-tooltip="Projects">
+              <i data-lucide="folder"></i>
+              <span>Projects</span>
+            </a>
+            <a href="#" class="menu-item" id="btn-sidebar-tm" data-tooltip="Translation Memory">
+              <i data-lucide="database"></i>
+              <span>Translation Memory</span>
+            </a>
+            <a href="#" class="menu-item" id="btn-sidebar-glossary" data-tooltip="Glossary">
+              <i data-lucide="book-open"></i>
+              <span>Glossary</span>
+            </a>
+            <a href="#" class="menu-item" id="btn-sidebar-analytics" data-tooltip="Analytics">
+              <i data-lucide="bar-chart-2"></i>
+              <span>Analytics</span>
+            </a>
+            <a href="#" class="menu-item" id="btn-sidebar-chat" data-tooltip="Chat">
+              <i data-lucide="message-square"></i>
+              <span>Chat</span>
+            </a>
+            <a href="#" class="menu-item mobile-only-nav" id="btn-sidebar-more">
+              <i data-lucide="more-horizontal"></i>
+              <span>More</span>
+            </a>
+          </nav>
+          
+          <div class="sidebar-footer">
+            <a href="#" class="menu-item" id="btn-sidebar-settings" data-tooltip="Settings">
+              <i data-lucide="settings"></i>
+              <span>Settings</span>
+            </a>
+            <a href="#" class="menu-item" data-tooltip="Support">
+              <i data-lucide="help-circle"></i>
+              <span>Support</span>
+            </a>
+          </div>
+        </aside>
+        
+        <!-- Main Content Area -->
+        <main class="main-content">
+          
+          <!-- Global Top Header -->
+          <header class="main-header">
+            <div class="search-bar-header">
+              <i data-lucide="search"></i>
+              <input type="text" id="global-search" placeholder="Search rooms, transcripts, memory..." autocomplete="off">
+              <!-- Search Results Dropdown -->
+              <div id="search-results-dropdown" class="search-results-dropdown"></div>
+            </div>
+            
+            <div class="header-actions">
+              <div class="notification-wrapper" style="position: relative; display: flex; align-items: center;">
+                <button class="btn-header-action" id="btn-notifications" aria-label="Notifications">
+                  <i data-lucide="bell"></i>
+                  <span class="notification-dot" id="notification-badge" style="display: none;"></span>
+                </button>
+                <!-- Notifications Dropdown -->
+                <div id="notifications-dropdown" class="notifications-dropdown">
+                  <div class="dropdown-header">
+                    <h4>Notifications</h4>
+                    <button id="btn-clear-notifications" class="btn-link">Clear All</button>
+                  </div>
+                  <div class="dropdown-body" id="notifications-list">
+                    <div class="empty-state">No new notifications</div>
+                  </div>
+                </div>
+              </div>
+              
+              <button class="btn-header-action" id="btn-theme-toggle" aria-label="Toggle Theme" data-tooltip="Toggle Dark Mode">
+                <i data-lucide="sun" class="theme-icon-light" style="display: none;"></i>
+                <i data-lucide="moon" class="theme-icon-dark"></i>
+              </button>
+              
+              <button class="btn-header-action" aria-label="History">
+                <i data-lucide="history"></i>
+              </button>
+              
+              <div class="header-profile-wrapper">
+                <button class="header-profile-trigger" id="profile-trigger" aria-label="User menu" aria-haspopup="true" aria-expanded="false">
+                  <div class="user-avatar" id="user-avatar">U</div>
+                  <i data-lucide="chevron-down" class="profile-chevron"></i>
+                </button>
+                
+                <!-- Profile Dropdown Card -->
+                <div id="profile-dropdown" class="profile-dropdown-card">
+                  <div class="profile-dropdown-header">
+                    <div class="user-avatar large" id="dropdown-user-avatar">U</div>
+                    <div class="profile-dropdown-info">
+                      <span id="profile-name" class="profile-name-text">Loading...</span>
+                      <span id="profile-email" class="profile-email-text">loading...</span>
+                    </div>
+                  </div>
+                  <div class="dropdown-divider"></div>
+                  <div class="profile-dropdown-body">
+                    <a href="/" class="dropdown-item" style="text-decoration: none; color: inherit;">
+                      <i data-lucide="globe"></i>
+                      <span>Go to Landing Page</span>
+                    </a>
+                    <button type="button" class="dropdown-item" id="btn-profile-settings">
+                      <i data-lucide="settings"></i>
+                      <span>Account Settings</span>
+                    </button>
+                    <button type="button" class="dropdown-item" id="btn-profile-support">
+                      <i data-lucide="help-circle"></i>
+                      <span>Help & Support</span>
+                    </button>
+                  </div>
+                  <div class="dropdown-divider"></div>
+                  <div class="profile-dropdown-footer">
+                    <button type="button" id="btn-logout" class="dropdown-item logout-item">
+                      <i data-lucide="log-out"></i>
+                      <span>Log Out</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </header>
+          
+          <!-- Main Body Content -->
+          <div class="main-body">
+            
+            <!-- 1. DASHBOARD VIEW -->
+            <div id="view-dashboard" class="content-view active">
+              <!-- Welcome Banner -->
+              <div class="welcome-banner">
+                <h2>Welcome back, <span id="welcome-name">User</span></h2>
+                <p>Here's your translation workspace overview for today.</p>
+              </div>
+
+              <!-- Push Notification Onboarding Banner -->
+              <div id="push-onboarding-banner" class="glass-card push-onboarding-banner" style="display: none;">
+                <div class="push-banner-content">
+                  <div class="push-banner-icon-wrapper">
+                    <i data-lucide="bell-ring" class="push-banner-icon pulsing-icon"></i>
+                  </div>
+                  <div class="push-banner-text">
+                    <h4>Stay Connected!</h4>
+                    <p>Enable native push notifications to receive real-time alerts for scheduled meetings and translations.</p>
+                  </div>
+                </div>
+                <div class="push-banner-actions">
+                  <button class="btn btn-primary btn-sm" id="btn-push-banner-enable">
+                    <i data-lucide="bell"></i>
+                    <span>Enable Notifications</span>
+                  </button>
+                  <button class="btn-icon-secondary btn-push-banner-close" id="btn-push-banner-close" title="Dismiss">
+                    <i data-lucide="x"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Asymmetric Grid -->
+              <div class="dashboard-grid">
+                
+                <!-- Left Column: Quick Actions -->
+                <div class="grid-left">
+                  <div id="btn-instant-meet" class="action-card clickable-card">
+                    <div class="card-icon icon-blue">
+                      <i data-lucide="video"></i>
+                    </div>
+                    <div class="card-content">
+                      <h3>Start Instant Meeting</h3>
+                      <p>Launch a real-time translated room immediately.</p>
+                    </div>
+                    <div class="card-arrow">
+                      <i data-lucide="arrow-right"></i>
+                    </div>
+                  </div>
+                  
+                  <div id="btn-open-schedule" class="action-card clickable-card">
+                    <div class="card-icon icon-green">
+                      <i data-lucide="calendar"></i>
+                    </div>
+                    <div class="card-content">
+                      <h3>Schedule Meeting</h3>
+                      <p>Set up a future room with pre-assigned languages.</p>
+                    </div>
+                    <div class="card-arrow">
+                      <i data-lucide="arrow-right"></i>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Right Column: Upcoming Meetings -->
+                <div class="grid-right">
+                  <div class="dashboard-card upcoming-card">
+                    <div class="card-header">
+                      <h3>Upcoming Meetings</h3>
+                      <a href="#" class="btn-link" id="btn-view-calendar">VIEW ALL CALENDAR</a>
+                    </div>
+                    <div id="upcoming-list" class="workspace-list active">
+                      <!-- Dynamic Content -->
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+              
+              <!-- Vault Section -->
+              <div class="vault-section">
+                <div class="dashboard-card vault-card">
+                  <div class="card-header">
+                    <h3>
+                      <i data-lucide="archive" class="header-icon"></i>
+                      <span>Transcript Vault</span>
+                    </h3>
+                    <div class="vault-actions">
+                      <div class="search-input-wrapper" style="position: relative; display: flex; align-items: center; margin-right: 8px;">
+                        <i data-lucide="search" style="position: absolute; left: 10px; width: 14px; height: 14px; color: var(--text-muted); pointer-events: none;"></i>
+                        <input type="text" id="vault-search" placeholder="Search transcripts..." style="padding: 6px 12px 6px 30px; border-radius: 8px; border: 1px solid var(--border-subtle); font-size: 0.82rem; outline: none; background: var(--bg-secondary); width: 160px; transition: width 0.2s;" onfocus="this.style.width='220px'" onblur="if(!this.value) this.style.width='160px'">
+                      </div>
+                      <button class="btn-icon-secondary" id="btn-download-all" title="Download All Transcripts">
+                        <i data-lucide="download"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div id="vault-list" class="workspace-list active">
+                    <!-- Dynamic Table Content -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. PROJECTS VIEW -->
+            <div id="view-projects" class="content-view">
+              <div class="glass-card" style="padding: 24px;">
+                <div class="modal-header" style="padding: 0 0 20px 0; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px;">
+                  <div>
+                    <h3><i data-lucide="folder"></i> Projects Grouping</h3>
+                    <p class="subtitle">Organize your translation rooms and terminology glossary under custom projects</p>
+                  </div>
+                </div>
+                <div class="project-split">
+                  <!-- Left Column: Create Project Form -->
+                  <div class="project-form-side">
+                    <h4>Create New Project</h4>
+                    <form id="project-form" style="margin-top: 12px;">
+                      <div class="input-group">
+                        <label for="project-name">Project Name</label>
+                        <div class="input-wrapper">
+                          <i data-lucide="type"></i>
+                          <input type="text" id="project-name" placeholder="e.g. Q2 Reviews" required autocomplete="off">
+                        </div>
+                      </div>
+                      <div class="input-group">
+                        <label for="project-desc">Description (Optional)</label>
+                        <div class="input-wrapper">
+                          <i data-lucide="align-left"></i>
+                          <textarea id="project-desc" placeholder="Describe the purpose of this project..." style="width: 100%; border-radius: 8px; border: 1px solid var(--border-subtle); padding: 10px 12px; font-family: var(--font-body); font-size: 0.88rem; outline: none; resize: vertical; min-height: 80px;"></textarea>
+                        </div>
+                      </div>
+                      <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;">
+                        <span>Create Project</span>
+                        <i data-lucide="plus"></i>
+                      </button>
+                    </form>
+                  </div>
+
+                  <!-- Right Column: Projects List -->
+                  <div class="project-list-side">
+                    <h4>Existing Projects</h4>
+                    <div id="projects-items-list" class="projects-list-container" style="margin-top: 12px; max-height: 450px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+                      <!-- Populated dynamically -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. TRANSLATION MEMORY VIEW -->
+            <div id="view-tm" class="content-view">
+              <div class="glass-card" style="padding: 24px;">
+                <div class="modal-header" style="padding: 0 0 20px 0; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px;">
+                  <div>
+                    <h3><i data-lucide="database"></i> Translation Memory</h3>
+                    <p class="subtitle">Cached translation segments reused automatically to speed up translations</p>
+                  </div>
+                </div>
+                <div class="search-bar" style="margin-bottom: 20px;">
+                  <i data-lucide="search"></i>
+                  <input type="text" id="tm-search" placeholder="Search cached segments..." autocomplete="off">
+                </div>
+                <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+                  <table class="vault-table tm-table">
+                    <thead>
+                      <tr>
+                        <th>SOURCE TEXT</th>
+                        <th>TRANSLATION</th>
+                        <th>LANGUAGES</th>
+                        <th style="text-align: right;">ACTION</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tm-items-list">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. GLOSSARY VIEW -->
+            <div id="view-glossary" class="content-view">
+              <div class="glass-card" style="padding: 24px;">
+                <div class="modal-header" style="padding: 0 0 20px 0; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px;">
+                  <div>
+                    <h3><i data-lucide="book-open"></i> Terminology Glossary</h3>
+                    <p class="subtitle">Enforce specific translations for local phrases or terminology</p>
+                  </div>
+                </div>
+                <!-- Add Term Form -->
+                <form id="glossary-form" class="glossary-add-form" style="margin-bottom: 24px; padding: 20px; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 12px;">
+                  <div class="glossary-form-grid">
+                    <div class="input-group-compact">
+                      <label for="glossary-source">Source Term</label>
+                      <input type="text" id="glossary-source" placeholder="e.g. bosseur" required autocomplete="off">
+                    </div>
+                    <div class="input-group-compact">
+                      <label for="glossary-target">Translation</label>
+                      <input type="text" id="glossary-target" placeholder="e.g. hard worker" required autocomplete="off">
+                    </div>
+                    <div class="input-group-compact">
+                      <label for="glossary-source-lang">From</label>
+                      <select id="glossary-source-lang" required>
+                        <option value="en">English</option>
+                        <option value="fr" selected>French</option>
+                        <option value="es">Spanish</option>
+                        <option value="de">German</option>
+                        <option value="ja">Japanese</option>
+                      </select>
+                    </div>
+                    <div class="input-group-compact">
+                      <label for="glossary-target-lang">To</label>
+                      <select id="glossary-target-lang" required>
+                        <option value="en" selected>English</option>
+                        <option value="fr">French</option>
+                        <option value="es">Spanish</option>
+                        <option value="de">German</option>
+                        <option value="ja">Japanese</option>
+                      </select>
+                    </div>
+                    <div class="input-group-compact">
+                      <label for="glossary-project">Project</label>
+                      <select id="glossary-project">
+                        <option value="">Global (All)</option>
+                        <!-- Populated dynamically -->
+                      </select>
+                    </div>
+                    <div class="glossary-form-action">
+                      <button type="submit" class="btn btn-primary btn-sm btn-block">
+                        <i data-lucide="plus"></i>
+                        <span>Add Term</span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+                <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+                  <table class="vault-table glossary-table">
+                    <thead>
+                      <tr>
+                        <th>SOURCE TERM</th>
+                        <th>TRANSLATION</th>
+                        <th>LANGUAGES</th>
+                        <th style="text-align: right;">ACTION</th>
+                      </tr>
+                    </thead>
+                    <tbody id="glossary-items-list">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. ANALYTICS VIEW -->
+            <div id="view-analytics" class="content-view">
+              <div class="glass-card" style="padding: 24px;">
+                <div class="modal-header" style="padding: 0 0 20px 0; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px;">
+                  <div>
+                    <h3><i data-lucide="bar-chart-2"></i> Analytics Dashboard</h3>
+                    <p class="subtitle">Monitor translation volumes, speeds, and activity metrics</p>
+                  </div>
+                </div>
+                <!-- KPI Cards Grid -->
+                <div class="analytics-kpi-grid">
+                  <div class="kpi-card">
+                    <div class="kpi-icon-wrapper info">
+                      <i data-lucide="video"></i>
+                    </div>
+                    <div class="kpi-content">
+                      <span class="kpi-label">Meetings Hosted</span>
+                      <h4 id="stat-meetings" class="kpi-value">0</h4>
+                    </div>
+                  </div>
+
+                  <div class="kpi-card">
+                    <div class="kpi-icon-wrapper success">
+                      <i data-lucide="languages"></i>
+                    </div>
+                    <div class="kpi-content">
+                      <span class="kpi-label">Words Translated</span>
+                      <h4 id="stat-words" class="kpi-value">0</h4>
+                    </div>
+                  </div>
+
+                  <div class="kpi-card">
+                    <div class="kpi-icon-wrapper warning">
+                      <i data-lucide="zap"></i>
+                    </div>
+                    <div class="kpi-content">
+                      <span class="kpi-label">Avg Latency</span>
+                      <h4 id="stat-latency" class="kpi-value">0.00s</h4>
+                    </div>
+                  </div>
+
+                  <div class="kpi-card">
+                    <div class="kpi-icon-wrapper primary">
+                      <i data-lucide="database"></i>
+                    </div>
+                    <div class="kpi-content">
+                      <span class="kpi-label">Saved Terms</span>
+                      <h4 id="stat-saved" class="kpi-value">0</h4>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Chart Panel -->
+                <div class="analytics-chart-panel" style="margin-top: 32px; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px;">
+                  <h4 style="font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 16px;">Translation Volume (Last 7 Days)</h4>
+                  <div style="position: relative; height: 260px; width: 100%;">
+                    <canvas id="analytics-chart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. CALENDAR VIEW -->
+            <div id="view-calendar" class="content-view">
+              <div class="glass-card calendar-card">
+                <div class="modal-header calendar-header">
+                  <div class="calendar-header-content">
+                    <div>
+                      <h3><i data-lucide="calendar"></i> Meeting Schedule & History</h3>
+                      <p class="subtitle">View all your scheduled, active, and past translation calls</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="btn-calendar-schedule">
+                      <i data-lucide="plus"></i>
+                      <span>Schedule Call</span>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                  <table class="vault-table">
+                    <thead>
+                      <tr>
+                        <th>MEETING TITLE</th>
+                        <th>DATE & TIME</th>
+                        <th>ROOM CODE</th>
+                        <th>STATUS</th>
+                        <th style="text-align: right;">ACTION</th>
+                      </tr>
+                    </thead>
+                    <tbody id="calendar-meetings-list">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+             <!-- 8. CHAT VIEW -->
+            <div id="view-chat" class="content-view">
+              <div class="glass-card chat-card-layout">
+                <!-- Chat Sidebar (Left Panel) -->
+                <div class="chat-sidebar">
+                  <div class="chat-sidebar-header">
+                    <h3>Messages</h3>
+                    <button id="btn-new-chat" class="btn btn-icon" title="New Chat">
+                      <i data-lucide="plus-circle"></i>
+                    </button>
+                  </div>
+                  <div class="chat-search-wrapper">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="chat-search-input" placeholder="Search conversations..." autocomplete="off">
+                  </div>
+                  <div class="chat-list-container">
+                    <div id="chat-list" class="chat-list">
+                      <!-- Populated dynamically -->
+                      <div class="chat-empty-state-list">Loading chats...</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Chat Window (Right Panel) -->
+                <div class="chat-window">
+                  <!-- Empty State -->
+                  <div id="chat-window-empty" class="chat-window-empty-state">
+                    <div class="empty-icon-wrapper">
+                      <i data-lucide="message-square"></i>
+                    </div>
+                    <h4>Your Conversation Workspace</h4>
+                    <p>Select an existing conversation or start a new chat with a colleague. Messages are translated automatically in real-time.</p>
+                    <button id="btn-empty-new-chat" class="btn btn-primary">
+                      <i data-lucide="plus"></i>
+                      <span>Start New Conversation</span>
+                    </button>
+                  </div>
+
+                  <!-- Active Chat State -->
+                  <div id="chat-window-active" class="chat-window-active-container" style="display: none;">
+                    <div class="chat-header">
+                      <div class="chat-header-user">
+                        <button id="btn-chat-back" class="btn btn-icon btn-chat-back" title="Back to Messages">
+                          <i data-lucide="arrow-left"></i>
+                        </button>
+                        <div class="chat-header-avatar" id="active-chat-avatar">C</div>
+                        <div class="chat-header-info">
+                          <h4 id="active-chat-name">Chat Room</h4>
+                          <span id="active-chat-status" class="chat-status-subtext">Participants...</span>
+                        </div>
+                      </div>
+                      <div class="chat-header-actions">
+                        <button id="btn-chat-video-call" class="btn btn-icon" title="Start Video Call">
+                          <i data-lucide="video"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div id="chat-messages-container" class="chat-messages-container">
+                      <!-- Messages will be populated here -->
+                    </div>
+
+                    <div id="chat-typing-indicator" class="chat-typing-indicator" style="display: none;">
+                      <span class="typing-dot"></span>
+                      <span class="typing-dot"></span>
+                      <span class="typing-dot"></span>
+                      <span class="typing-text">Someone is typing...</span>
+                    </div>
+
+                    <div class="chat-composer-container">
+                      <form id="chat-composer-form" class="chat-composer-form">
+                        <div class="chat-input-wrapper">
+                          <input type="text" id="chat-message-input" placeholder="Type a message..." autocomplete="off" required>
+                        </div>
+                        <button type="submit" id="btn-send-chat" class="btn btn-primary btn-send">
+                          <i data-lucide="send"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 7. SETTINGS VIEW -->
+            <div id="view-settings" class="content-view">
+              <div class="glass-card settings-card">
+                <div class="settings-layout">
+                  
+                  <!-- Left Sidebar: Settings Navigation -->
+                  <div class="settings-sidebar">
+                    <button class="settings-tab-btn active" data-target="settings-pane-profile">
+                      <i data-lucide="user"></i>
+                      <span>Profile</span>
+                    </button>
+                    <button class="settings-tab-btn" data-target="settings-pane-preferences">
+                      <i data-lucide="sliders"></i>
+                      <span>Preferences</span>
+                    </button>
+                    <button class="settings-tab-btn" data-target="settings-pane-devices">
+                      <i data-lucide="video"></i>
+                      <span>Devices & Media</span>
+                    </button>
+                    <button class="settings-tab-btn" id="settings-tab-security" data-target="settings-pane-security">
+                      <i data-lucide="lock"></i>
+                      <span>Security</span>
+                    </button>
+                    <button class="settings-tab-btn" data-target="settings-pane-notifications">
+                      <i data-lucide="bell"></i>
+                      <span>Push Notifications</span>
+                    </button>
+                  </div>
+
+                  <!-- Right Side: Panes -->
+                  <div class="settings-content">
+                    
+                    <!-- Pane 1: Profile -->
+                    <div class="settings-pane active" id="settings-pane-profile">
+                      <div class="pane-header">
+                        <h4>Profile Settings</h4>
+                        <p class="subtitle">Update your personal identity details</p>
+                      </div>
+                      <form id="profile-update-form">
+                        <div class="avatar-edit-section">
+                          <div class="avatar-large" id="settings-avatar-preview">S</div>
+                          <div class="avatar-meta">
+                            <span class="avatar-label">Account Avatar</span>
+                            <span class="avatar-hint">Generated from your name's initials</span>
+                          </div>
+                        </div>
+                        
+                        <div class="input-group">
+                          <label for="profile-name-input">Full Name</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="user"></i>
+                            <input type="text" id="profile-name-input" placeholder="Your name" required autocomplete="name">
+                          </div>
+                        </div>
+
+                        <div class="input-group">
+                           <label for="profile-email-input">Email Address</label>
+                           <div class="input-wrapper">
+                             <i data-lucide="mail"></i>
+                             <input type="email" id="profile-email-input" placeholder="you@company.com" required autocomplete="email">
+                           </div>
+                         </div>
+
+                         <div class="input-group">
+                           <label for="profile-lang-input">Preferred Translation Language</label>
+                           <div class="input-wrapper">
+                             <i data-lucide="languages"></i>
+                             <select id="profile-lang-input" required>
+                               <option value="en">English</option>
+                               <option value="fr">Français (French)</option>
+                               <option value="es">Español (Spanish)</option>
+                               <option value="de">Deutsch (German)</option>
+                               <option value="ja">日本語 (Japanese)</option>
+                               <option value="pt">Português (Portuguese)</option>
+                               <option value="it">Italiano (Italian)</option>
+                               <option value="nl">Nederlands (Dutch)</option>
+                               <option value="zh">中文 (Chinese)</option>
+                               <option value="ru">Русский (Russian)</option>
+                               <option value="ar">العربية (Arabic)</option>
+                               <option value="hi">हिन्दी (Hindi)</option>
+                               <option value="ko">한국어 (Korean)</option>
+                             </select>
+                           </div>
+                         </div>
+                        
+                        <button type="submit" class="btn btn-primary" id="btn-save-profile">
+                          <i data-lucide="save"></i>
+                          <span>Save Changes</span>
+                        </button>
+                      </form>
+                    </div>
+
+                    <!-- Pane 2: Preferences -->
+                    <div class="settings-pane" id="settings-pane-preferences">
+                      <div class="pane-header">
+                        <h4>Application Preferences</h4>
+                        <p class="subtitle">Customize default options and user preferences</p>
+                      </div>
+                      <form id="preferences-update-form">
+                        <div class="input-group">
+                          <label for="settings-default-lang">Default Speaking Language</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="languages"></i>
+                            <select id="settings-default-lang" required>
+                              <option value="en">English</option>
+                              <option value="pcm">English (Nigeria / Pidgin)</option>
+                              <option value="fr">Français (French)</option>
+                              <option value="es">Español (Spanish)</option>
+                              <option value="de">Deutsch (German)</option>
+                              <option value="ja">日本語 (Japanese)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="input-group">
+                          <label for="settings-default-target-lang">Default Translation Language</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="arrow-right-left"></i>
+                            <select id="settings-default-target-lang" required>
+                              <option value="en">English</option>
+                              <option value="pcm">English (Nigeria / Pidgin)</option>
+                              <option value="fr">Français (French)</option>
+                              <option value="es">Español (Spanish)</option>
+                              <option value="de">Deutsch (German)</option>
+                              <option value="ja">日本語 (Japanese)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="input-group">
+                          <label for="settings-theme">Theme Mode</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="palette"></i>
+                            <select id="settings-theme" required>
+                              <option value="light">Light/Default Mode</option>
+                              <option value="dark">Dark Mode</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="checkbox-group">
+                          <label class="checkbox-label">
+                            <input type="checkbox" id="settings-notify-meetings" checked>
+                            <span>Enable meeting reminder notifications</span>
+                          </label>
+                        </div>
+
+                        <div class="checkbox-group">
+                          <label class="checkbox-label">
+                            <input type="checkbox" id="settings-notify-glossary" checked>
+                            <span>Enable glossary updates notifications</span>
+                          </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                          <i data-lucide="save"></i>
+                          <span>Save Preferences</span>
+                        </button>
+                      </form>
+                    </div>
+
+                    <!-- Pane 3: Devices & Media -->
+                    <div class="settings-pane" id="settings-pane-devices">
+                      <div class="pane-header">
+                        <h4>Media Devices</h4>
+                        <p class="subtitle">Select and preview your audio and video inputs</p>
+                      </div>
+                      <form id="devices-update-form">
+                        <div class="input-group">
+                          <label for="settings-camera">Camera</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="video"></i>
+                            <select id="settings-camera" required>
+                              <option value="">Loading cameras...</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="input-group">
+                          <label for="settings-mic">Microphone</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="mic"></i>
+                            <select id="settings-mic" required>
+                              <option value="">Loading microphones...</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <!-- Camera Live Preview Box -->
+                        <div class="device-preview-section">
+                          <span class="preview-label">Camera Live Preview</span>
+                          <div class="video-preview-container">
+                            <video id="settings-video-preview" autoplay muted playsinline></video>
+                            <div class="video-preview-placeholder" id="settings-video-placeholder">
+                              <i data-lucide="video-off"></i>
+                              <span>Webcam preview is currently inactive</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                          <i data-lucide="save"></i>
+                          <span>Save Device Selection</span>
+                        </button>
+                      </form>
+                    </div>
+
+                    <!-- Pane 4: Security -->
+                    <div class="settings-pane" id="settings-pane-security">
+                      <div class="pane-header">
+                        <h4>Security & Sessions</h4>
+                        <p class="subtitle">Manage your account credentials and login sessions</p>
+                      </div>
+                      
+                      <!-- Password Update Form -->
+                      <form id="security-update-form">
+                        <div class="input-group">
+                          <label for="security-current-password">Current Password</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="lock"></i>
+                            <input type="password" id="security-current-password" placeholder="••••••••" required autocomplete="current-password">
+                            <button type="button" class="btn-toggle-password" tabindex="-1">
+                              <i data-lucide="eye"></i>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div class="input-group">
+                          <label for="security-new-password">New Password</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="lock"></i>
+                            <input type="password" id="security-new-password" placeholder="At least 8 characters (1 uppercase, 1 number, 1 symbol)" required autocomplete="new-password">
+                            <button type="button" class="btn-toggle-password" tabindex="-1">
+                              <i data-lucide="eye"></i>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div class="input-group">
+                          <label for="security-confirm-password">Confirm New Password</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="lock"></i>
+                            <input type="password" id="security-confirm-password" placeholder="Confirm new password" required autocomplete="new-password">
+                            <button type="button" class="btn-toggle-password" tabindex="-1">
+                              <i data-lucide="eye"></i>
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" id="btn-save-password">
+                          <i data-lucide="shield-check"></i>
+                          <span>Update Password</span>
+                        </button>
+                      </form>
+                      
+                      <div class="divider" style="margin: 32px 0 24px 0;"></div>
+                      
+                      <!-- Global Logout Session Revocation -->
+                      <div class="security-danger-zone">
+                        <h5>Danger Zone</h5>
+                        <p class="subtitle">Revoke all active sessions and log out of all other devices</p>
+                        <button type="button" class="btn btn-danger" id="btn-security-revoke-all">
+                          <i data-lucide="log-out"></i>
+                          <span>Revoke All Other Sessions</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Pane 5: Push Notifications -->
+                    <div class="settings-pane" id="settings-pane-notifications">
+                      <div class="pane-header">
+                        <h4>Push Notifications</h4>
+                        <p class="subtitle">Receive native alerts on your desktop or phone even when Syncra is closed</p>
+                      </div>
+
+                      <div class="settings-notification-card">
+                        <div class="notification-card-header">
+                          <div class="notification-card-title-group">
+                            <i data-lucide="bell-ring" class="notification-card-icon"></i>
+                            <div>
+                              <h5>System Push Notifications</h5>
+                              <p class="notification-card-desc">Deliver instant notifications using your browser's native capabilities.</p>
+                            </div>
+                          </div>
+                          <div class="push-status-badge" id="push-status-badge">Checking...</div>
+                        </div>
+
+                        <div class="notification-card-body">
+                          <div class="push-toggle-group">
+                            <span>Enable Native Push Notifications</span>
+                            <label class="switch">
+                              <input type="checkbox" id="settings-push-enabled">
+                              <span class="slider round"></span>
+                            </label>
+                          </div>
+
+                          <div class="push-details-group" id="push-details-group" style="display: none;">
+                            <div class="push-action-row">
+                              <button type="button" class="btn btn-secondary" id="btn-test-push">
+                                <i data-lucide="send"></i>
+                                <span>Send Test Notification</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="push-info-box">
+                        <i data-lucide="info" class="info-icon"></i>
+                        <div class="info-content">
+                          <h6>How it works:</h6>
+                          <ul>
+                            <li><strong>Desktops & Android:</strong> Toggling this on registers this browser directly with no downloads needed.</li>
+                            <li><strong>iOS (iPhone/iPad):</strong> Requires iOS 16.4+. First, tap the Share button in Safari, select <strong>"Add to Home Screen"</strong>, then launch the app from your home screen to enable push notifications.</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Footer -->
+          <footer class="main-footer">
+            <span class="copyright">© 2026 Syncra Enterprise. All rights reserved.</span>
+            <div class="footer-links">
+              <a href="#">Privacy Policy</a>
+              <a href="#">Terms of Service</a>
+              <a href="#">API Docs</a>
+              <a href="#">Status</a>
+            </div>
+          </footer>
+          
+        </main>
+        
+      </div>
+    </div>
+    
+    <!-- 4. CALL SCREEN -->
+    <div id="call-screen" class="screen">
+      <!-- Top Header -->
+      <header class="call-header">
+        <div class="room-info">
+          <span class="status-dot connected"></span>
+          <span id="room-title" class="room-name">#room</span>
+          <button id="btn-copy-meeting-link" class="btn-copy-room-link" title="Copy Meeting Link">
+            <i data-lucide="copy"></i>
+          </button>
+        </div>
+        <div class="translation-mode">
+          <span id="user-lang-badge" class="badge">EN</span>
+          <i data-lucide="arrow-right-left"></i>
+          <span id="target-lang-badge" class="badge active">FR</span>
+        </div>
+      </header>
+      
+      <!-- Main Content Area -->
+      <main class="call-main">
+        <!-- Video Grid -->
+        <div class="video-grid">
+          <!-- Remote Videos Grid -->
+          <div id="remote-videos-container">
+            <div class="video-placeholder" id="p2p-placeholder">
+              <i data-lucide="video-off"></i>
+              <span id="remote-name">Waiting for participants to join...</span>
+            </div>
+          </div>
+          
+          <!-- Local Video (Small/Floating) -->
+          <div class="video-container local" id="local-video-container">
+            <video id="local-video" autoplay muted playsinline></video>
+            <div class="video-avatar-placeholder" id="local-avatar-placeholder">
+              <div class="video-avatar-circle" id="local-avatar-circle">Y</div>
+            </div>
+            <div class="video-overlay">
+              <span>You</span>
+            </div>
+            <div class="voice-indicator" id="local-voice-indicator"></div>
+          </div>
+        </div>
+        
+        <!-- Captions Panel -->
+        <div class="captions-panel">
+          <!-- Active Participants List (Top Section) -->
+          <div class="call-participants-box">
+            <div class="participants-box-header">
+              <span>Active Participants (<span id="active-participants-count">1</span>)</span>
+              <i data-lucide="users" style="width: 14px; height: 14px; color: var(--text-muted);"></i>
+            </div>
+            <div class="call-participants-list" id="call-participants-list">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Live Translation Stream (Bottom Section) -->
+          <div class="panel-header">
+            <h3><i data-lucide="languages" style="color: var(--primary);"></i> Live Translation Stream</h3>
+            <div class="panel-header-right">
+              <span id="speech-status" class="speech-status idle">Listening...</span>
+              <span class="mobile-expand-hint"><i id="panel-expand-icon" data-lucide="chevron-up"></i></span>
+            </div>
+          </div>
+          
+          <div id="caption-stream" class="caption-stream">
+            <div class="welcome-caption">
+              <p class="translated">Welcome to Syncra. Speak naturally—captions and translations will appear here in real-time.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+      
+      <!-- Controls Footer -->
+      <footer class="call-controls">
+        <button id="btn-mute" class="ctrl-btn" aria-label="Mute Microphone">
+          <i data-lucide="mic"></i>
+        </button>
+        <button id="btn-camera" class="ctrl-btn" aria-label="Toggle Camera">
+          <i data-lucide="video"></i>
+        </button>
+        <button id="btn-toggle-captions" class="ctrl-btn active" aria-label="Toggle Captions" title="Toggle Live Translation">
+          <i data-lucide="subtitles"></i>
+        </button>
+        <button id="btn-export-transcript" class="ctrl-btn" aria-label="Export Transcript">
+          <i data-lucide="download"></i>
+        </button>
+        <button id="btn-copy-meeting-link-footer" class="ctrl-btn" aria-label="Copy Meeting Link" title="Copy Meeting Link">
+          <i data-lucide="copy"></i>
+        </button>
+        <button id="btn-leave" class="ctrl-btn ctrl-btn-danger" aria-label="Leave Call">
+          <i data-lucide="phone-off"></i>
+        </button>
+      </footer>
+    </div>
+
+    <!-- 5. MEETING ENDED SCREEN -->
+    <div id="ended-screen" class="screen">
+      <div class="glass-card entry-card">
+        <div class="logo-area">
+          <div class="logo-icon" style="background: var(--danger); box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);">
+            <i data-lucide="phone-off"></i>
+          </div>
+          <h1>Meeting Ended</h1>
+          <p class="subtitle">This translation call has been completed by the host.</p>
+        </div>
+        <button id="btn-ended-home" class="btn btn-primary btn-block">
+          <span>Go to Dashboard</span>
+          <i data-lucide="home"></i>
+        </button>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- 5. SCHEDULE MEETING MODAL -->
+  <div id="schedule-modal" class="modal-overlay">
+    <div class="glass-card modal-card">
+      <div class="modal-header">
+        <h3><i data-lucide="calendar"></i> Schedule Translation Call</h3>
+        <button id="btn-close-schedule" class="btn-close"><i data-lucide="x"></i></button>
+      </div>
+      <form id="schedule-form">
+        <div class="input-group">
+          <label for="schedule-title">Meeting Title</label>
+          <div class="input-wrapper">
+            <i data-lucide="type"></i>
+            <input type="text" id="schedule-title" placeholder="e.g. Q2 Syncra Review" required autocomplete="off">
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="schedule-date">Date & Time</label>
+          <div class="input-wrapper">
+            <i data-lucide="clock"></i>
+            <input type="datetime-local" id="schedule-date" required>
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="schedule-project">Assign to Project (Optional)</label>
+          <div class="input-wrapper">
+            <i data-lucide="folder"></i>
+            <select id="schedule-project">
+              <option value="">No Project (Global)</option>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="btn-cancel-schedule" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. TRANSCRIPT VAULT MODAL -->
+  <div id="transcript-modal" class="modal-overlay">
+    <div class="glass-card modal-card modal-large">
+      <div class="modal-header">
+        <div>
+          <h3 id="transcript-modal-title">Meeting Transcript</h3>
+          <p id="transcript-modal-subtitle" class="subtitle">Bilingual log</p>
+        </div>
+        <button id="btn-close-transcript" class="btn-close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="search-bar">
+          <i data-lucide="search"></i>
+          <input type="text" id="transcript-search" placeholder="Search transcript dialogues..." autocomplete="off">
+        </div>
+        <div id="transcript-dialogues" class="transcript-stream">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals converted to inline content views -->
+
+  <!-- START NEW CHAT MODAL -->
+  <div id="new-chat-modal" class="modal-overlay">
+    <div class="glass-card modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Start New Conversation</h3>
+          <p class="subtitle">Select participants to begin</p>
+        </div>
+        <button id="btn-close-new-chat" class="btn-close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <!-- Chat Type Toggle -->
+        <div class="chat-type-toggle">
+          <button type="button" class="chat-type-btn active" id="btn-type-dm">Direct Message</button>
+          <button type="button" class="chat-type-btn" id="btn-type-group">Group Chat</button>
+        </div>
+
+        <!-- Group Name Input (Only visible for Group Chat) -->
+        <div id="group-name-wrapper" class="input-group" style="display: none; margin-top: 16px;">
+          <label for="new-group-name">Group Name</label>
+          <div class="input-wrapper">
+            <i data-lucide="users"></i>
+            <input type="text" id="new-group-name" placeholder="Enter group name...">
+          </div>
+          <span id="new-group-name-error" class="inline-error-msg" style="display: none; color: #ef4444; font-size: 0.75rem; margin-top: 6px; align-items: center; gap: 4px;">
+            <i data-lucide="alert-circle" style="width: 14px; height: 14px;"></i>
+            <span>Group name is required</span>
+          </span>
+        </div>
+
+        <!-- User Search -->
+        <div class="search-bar" style="margin-top: 16px;">
+          <i data-lucide="search"></i>
+          <input type="text" id="new-chat-user-search" placeholder="Search colleagues by name or email..." autocomplete="off">
+        </div>
+
+        <!-- Scrollable Users List -->
+        <div class="modal-users-list-title" style="margin-top: 12px; font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">COLLEAGUES</div>
+        <div id="new-chat-users-list" class="modal-users-list">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-cancel-new-chat" class="btn btn-secondary">Cancel</button>
+        <button id="btn-create-chat-submit" class="btn btn-primary" disabled>Start Chat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. CUSTOM CONFIRMATION MODAL -->
+  <div id="confirm-modal" class="modal-overlay">
+    <div class="glass-card modal-card">
+      <div class="modal-header">
+        <h3 id="confirm-modal-title">Confirm Action</h3>
+        <button id="btn-close-confirm" class="btn-close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body" style="height: auto; min-height: unset; padding: 8px 0;">
+        <p id="confirm-modal-message" style="line-height: 1.5; color: var(--text-main);">Are you sure you want to proceed?</p>
+      </div>
+      <div class="modal-actions" style="margin-top: 24px;">
+        <button id="btn-cancel-confirm" class="btn btn-secondary">Cancel</button>
+        <button id="btn-action-confirm" class="btn btn-primary">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Sheet Drawer -->
+  <div id="mobile-nav-sheet" class="bottom-sheet-overlay">
+    <div class="bottom-sheet-card">
+      <div class="bottom-sheet-header">
+        <div class="bottom-sheet-handle"></div>
+        <div class="bottom-sheet-title-row">
+          <h3>More Options</h3>
+          <button id="btn-close-mobile-sheet" class="bottom-sheet-close"><i data-lucide="x"></i></button>
+        </div>
+      </div>
+      <div class="bottom-sheet-body">
+        <div class="bottom-sheet-grid">
+          <button class="sheet-grid-item" id="btn-sheet-tm">
+            <div class="sheet-icon-wrapper tm-color">
+              <i data-lucide="database"></i>
+            </div>
+            <span>Translation Memory</span>
+          </button>
+          <button class="sheet-grid-item" id="btn-sheet-glossary">
+            <div class="sheet-icon-wrapper glossary-color">
+              <i data-lucide="book-open"></i>
+            </div>
+            <span>Glossary</span>
+          </button>
+          <button class="sheet-grid-item" id="btn-sheet-analytics">
+            <div class="sheet-icon-wrapper analytics-color">
+              <i data-lucide="bar-chart-2"></i>
+            </div>
+            <span>Analytics</span>
+          </button>
+          <button class="sheet-grid-item" id="btn-sheet-settings">
+            <div class="sheet-icon-wrapper settings-color">
+              <i data-lucide="settings"></i>
+            </div>
+            <span>Settings</span>
+          </button>
+          <button class="sheet-grid-item" id="btn-sheet-support">
+            <div class="sheet-icon-wrapper support-color">
+              <i data-lucide="help-circle"></i>
+            </div>
+            <span>Support</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONBOARDING MODAL/WIZARD -->
+  <div id="onboarding-modal" class="modal-overlay">
+    <div class="glass-card modal-card onboarding-card" style="max-width: 500px; padding: 28px 28px 24px 28px;">
+      <div class="onboarding-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div class="brand-logo-small" style="display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; color: var(--primary);">
+          <i data-lucide="aperture" style="width: 20px; height: 20px;"></i>
+          <span>Syncra</span>
+        </div>
+        <div class="step-indicator" style="display: flex; gap: 8px;">
+          <span class="step-dot active" data-step="1" style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary); transition: all 0.3s;"></span>
+          <span class="step-dot" data-step="2" style="width: 8px; height: 8px; border-radius: 50%; background: var(--border-subtle); transition: all 0.3s;"></span>
+          <span class="step-dot" data-step="3" style="width: 8px; height: 8px; border-radius: 50%; background: var(--border-subtle); transition: all 0.3s;"></span>
+          <span class="step-dot" data-step="4" style="width: 8px; height: 8px; border-radius: 50%; background: var(--border-subtle); transition: all 0.3s;"></span>
+        </div>
+      </div>
+
+      <div class="onboarding-steps-container" style="position: relative; overflow: hidden; min-height: 330px;">
+        
+        <!-- Step 1: Welcome & Profile Details -->
+        <div class="onboarding-step active" id="onboarding-step-1" style="display: block;">
+          <div class="step-content" style="display: flex; flex-direction: column;">
+            <div class="step-icon-big" style="width: 48px; height: 48px; border-radius: 12px; background: hsl(224, 100%, 95%); color: var(--primary); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+              <i data-lucide="sparkles" style="width: 24px; height: 24px;"></i>
+            </div>
+            <h2 style="font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; letter-spacing: -0.02em;">Welcome to Syncra!</h2>
+            <p class="step-description" style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">Let's configure your workspace in a few quick steps so you can begin translating instantly.</p>
+            
+            <div class="input-group">
+              <label for="onboarding-name">Verify Your Name</label>
+              <div class="input-wrapper">
+                <i data-lucide="user"></i>
+                <input type="text" id="onboarding-name" placeholder="Full Name" required>
+              </div>
+              <span class="validation-error-label" style="display: none;"></span>
+            </div>
+            
+            <div class="input-group">
+              <label for="onboarding-pref-lang">Preferred Interface Language</label>
+              <p class="field-hint" style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px;">Incoming translations will default to this language.</p>
+              <div class="input-wrapper">
+                <i data-lucide="languages"></i>
+                <select id="onboarding-pref-lang">
+                  <option value="en" selected>English</option>
+                  <option value="fr">Français (French)</option>
+                  <option value="es">Español (Spanish)</option>
+                  <option value="de">Deutsch (German)</option>
+                  <option value="ja">日本語 (Japanese)</option>
+                  <option value="pt">Português (Portuguese)</option>
+                  <option value="it">Italiano (Italian)</option>
+                  <option value="nl">Nederlands (Dutch)</option>
+                  <option value="zh">中文 (Chinese)</option>
+                  <option value="ru">Русский (Russian)</option>
+                  <option value="ar">العربية (Arabic)</option>
+                  <option value="hi">हिन्दी (Hindi)</option>
+                  <option value="ko">한국어 (Korean)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Default Calling Preferences -->
+        <div class="onboarding-step" id="onboarding-step-2" style="display: none;">
+          <div class="step-content" style="display: flex; flex-direction: column;">
+            <div class="step-icon-big" style="width: 48px; height: 48px; border-radius: 12px; background: hsl(150, 100%, 95%); color: hsl(150, 84%, 37%); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+              <i data-lucide="phone-call" style="width: 24px; height: 24px;"></i>
+            </div>
+            <h2 style="font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; letter-spacing: -0.02em;">Calling Preferences</h2>
+            <p class="step-description" style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">Set up your standard speech settings for real-time translation calls.</p>
+            
+            <div class="input-group">
+              <label for="onboarding-default-lang">The Language You Speak</label>
+              <div class="input-wrapper">
+                <i data-lucide="volume-2"></i>
+                <select id="onboarding-default-lang">
+                  <option value="en" selected>English</option>
+                  <option value="pcm">English (Nigeria / Pidgin)</option>
+                  <option value="fr">Français (French)</option>
+                  <option value="es">Español (Spanish)</option>
+                  <option value="de">Deutsch (German)</option>
+                  <option value="ja">日本語 (Japanese)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label for="onboarding-target-lang">Default Language to Translate To</label>
+              <div class="input-wrapper">
+                <i data-lucide="arrow-right-left"></i>
+                <select id="onboarding-target-lang">
+                  <option value="en">English</option>
+                  <option value="pcm">English (Nigeria / Pidgin)</option>
+                  <option value="fr" selected>Français (French)</option>
+                  <option value="es">Español (Spanish)</option>
+                  <option value="de">Deutsch (German)</option>
+                  <option value="ja">日本語 (Japanese)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Device Configuration -->
+        <div class="onboarding-step" id="onboarding-step-3" style="display: none;">
+          <div class="step-content" style="display: flex; flex-direction: column;">
+            <div class="step-icon-big" style="width: 48px; height: 48px; border-radius: 12px; background: hsl(28, 100%, 95%); color: hsl(28, 90%, 45%); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+              <i data-lucide="video" style="width: 24px; height: 24px;"></i>
+            </div>
+            <h2 style="font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; letter-spacing: -0.02em;">Device Setup</h2>
+            <p class="step-description" style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">Verify your camera and microphone options and check if the preview loads correctly.</p>
+            
+            <div class="devices-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+              <div class="input-group" style="margin-bottom: 0;">
+                <label for="onboarding-camera">Camera</label>
+                <div class="input-wrapper">
+                  <i data-lucide="video"></i>
+                  <select id="onboarding-camera" style="font-size: 0.8rem; padding-right: 20px;">
+                    <option value="">Detecting cameras...</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="input-group" style="margin-bottom: 0;">
+                <label for="onboarding-mic">Microphone</label>
+                <div class="input-wrapper">
+                  <i data-lucide="mic"></i>
+                  <select id="onboarding-mic" style="font-size: 0.8rem; padding-right: 20px;">
+                    <option value="">Detecting microphones...</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="onboarding-preview-container" style="position: relative; width: 100%; height: 140px; border-radius: 12px; overflow: hidden; background: var(--bg-secondary); border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center;">
+              <video id="onboarding-video-preview" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover; display: none; transform: scaleX(-1);"></video>
+              <div class="onboarding-video-placeholder" id="onboarding-video-placeholder" style="display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--text-muted);">
+                <i data-lucide="video-off" style="width: 32px; height: 32px;"></i>
+                <span style="font-size: 0.8rem; font-weight: 500;">Camera preview inactive</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: First Project Creation -->
+        <div class="onboarding-step" id="onboarding-step-4" style="display: none;">
+          <div class="step-content" style="display: flex; flex-direction: column;">
+            <div class="step-icon-big" style="width: 48px; height: 48px; border-radius: 12px; background: hsl(262, 100%, 95%); color: hsl(262, 80%, 50%); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+              <i data-lucide="folder-plus" style="width: 24px; height: 24px;"></i>
+            </div>
+            <h2 style="font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; letter-spacing: -0.02em;">Your First Project</h2>
+            <p class="step-description" style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">Syncra groups meetings, terminology lists, and custom terms under projects. Let's create your first one.</p>
+            
+            <div class="input-group">
+              <label for="onboarding-project-name">Project Name</label>
+              <div class="input-wrapper">
+                <i data-lucide="folder"></i>
+                <input type="text" id="onboarding-project-name" placeholder="e.g. Benin Operations" value="My First Project" required>
+              </div>
+              <span class="validation-error-label" style="display: none;"></span>
+            </div>
+
+            <div class="input-group">
+              <label for="onboarding-project-desc">Description (Optional)</label>
+              <div class="input-wrapper">
+                <i data-lucide="align-left"></i>
+                <textarea id="onboarding-project-desc" placeholder="What is this project for?" style="width: 100%; border-radius: 8px; border: 1px solid var(--border-subtle); padding: 10px 12px; font-family: var(--font-body); font-size: 0.88rem; outline: none; resize: vertical; min-height: 60px;"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="onboarding-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btn-onboarding-prev" class="btn btn-secondary" style="height: 40px; padding: 0 16px;" disabled>
+            <i data-lucide="arrow-left"></i>
+            <span>Back</span>
+          </button>
+          <button type="button" id="btn-onboarding-skip" class="btn btn-secondary" style="height: 40px; padding: 0 16px; background: transparent; border-color: transparent; color: var(--text-muted);">
+            <span>Skip for now</span>
+          </button>
+        </div>
+        <button type="button" id="btn-onboarding-next" class="btn btn-primary" style="height: 40px; padding: 0 16px;">
+          <span>Next</span>
+          <i data-lucide="arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="green-room-modal" class="modal-overlay">
+    <div class="glass-card modal-card green-room-card" style="max-width: 680px; width: 95%; padding: 28px; position: relative;">
+      <!-- Connecting Overlay -->
+      <div id="green-room-connecting" class="green-room-connecting-overlay" style="display: none;">
+        <div class="loader-content">
+          <div class="spinner"></div>
+          <h4>Connecting to Meeting Room...</h4>
+          <p>Setting up secure WebRTC channels and real-time translation engines.</p>
+        </div>
+      </div>
+
+      <div class="modal-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="video" style="width: 22px; height: 22px; color: var(--primary);"></i>
+          <span>Pre-Call Setup</span>
+        </h3>
+        <button type="button" class="btn-close" id="btn-green-room-close" aria-label="Close pre-flight check"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="green-room-grid">
+        <!-- Left: Device Selection & Video Preview -->
+        <div class="green-room-left" style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="green-room-preview-container" style="position: relative; width: 100%; height: 200px; border-radius: 12px; overflow: hidden; background: var(--bg-secondary); border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center;">
+            <video id="green-room-video-preview" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none;"></video>
+            <div class="green-room-video-placeholder" id="green-room-video-placeholder" style="display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--text-muted);">
+              <i data-lucide="video-off" style="width: 40px; height: 40px;"></i>
+              <span style="font-size: 0.85rem; font-weight: 500;">Camera is loading or blocked</span>
+            </div>
+            
+            <!-- Floating Mic Indicator Bar -->
+            <div class="green-room-mic-indicator" style="position: absolute; bottom: 12px; left: 12px; right: 12px; height: 6px; background: rgba(0,0,0,0.25); border-radius: 3px; overflow: hidden; display: flex; align-items: center; z-index: 10;">
+              <div id="green-room-mic-level" style="width: 0%; height: 100%; background: var(--success); transition: width 0.08s ease;"></div>
+            </div>
+          </div>
+
+          <div class="devices-list-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="input-group" style="margin-bottom: 0;">
+              <label for="green-room-camera" style="font-size: 0.75rem;">Camera</label>
+              <div class="input-wrapper">
+                <i data-lucide="video"></i>
+                <select id="green-room-camera" style="font-size: 0.8rem; padding-right: 20px;">
+                  <option value="">Loading camera...</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="input-group" style="margin-bottom: 0;">
+              <label for="green-room-mic" style="font-size: 0.75rem;">Microphone</label>
+              <div class="input-wrapper">
+                <i data-lucide="mic"></i>
+                <select id="green-room-mic" style="font-size: 0.8rem; padding-right: 20px;">
+                  <option value="">Loading mic...</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Language Setup -->
+        <div class="green-room-right" style="display: flex; flex-direction: column; gap: 16px; justify-content: center;">
+          <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px;">
+            Verify your speech translation direction before entering the meeting. You can adjust this during the call if needed.
+          </p>
+
+          <div class="input-group" style="margin-bottom: 12px;">
+            <label for="green-room-speak-lang">Spoken Language</label>
+            <div class="input-wrapper">
+              <i data-lucide="volume-2"></i>
+              <select id="green-room-speak-lang">
+                <option value="en">English</option>
+                <option value="pcm">English (Nigeria / Pidgin)</option>
+                <option value="fr">Français (French)</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="ja">日本語 (Japanese)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="input-group" style="margin-bottom: 0;">
+            <label for="green-room-translate-lang">Translation Target</label>
+            <div class="input-wrapper">
+              <i data-lucide="arrow-right-left"></i>
+              <select id="green-room-translate-lang">
+                <option value="en">English</option>
+                <option value="pcm">English (Nigeria / Pidgin)</option>
+                <option value="fr">Français (French)</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="ja">日本語 (Japanese)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="green-room-footer" style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+        <button type="button" id="btn-green-room-cancel" class="btn btn-secondary" style="height: 44px;">Cancel</button>
+        <button type="button" id="btn-green-room-join" class="btn btn-primary" style="height: 44px; padding: 0 24px;">
+          <span>Join Meeting</span>
+          <i data-lucide="arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Socket.io & App Logic -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

@@ -67,9 +67,7 @@ export const settings = {
 
         // Start camera preview if entering the Devices tab
         if (targetId === 'settings-pane-devices') {
-          this.loadDevices().then(() => {
-            this.startCameraPreview();
-          });
+          this.loadDevices();
         }
       });
     });
@@ -243,26 +241,40 @@ export const settings = {
     cameraSelect.innerHTML = '<option value="">Loading cameras...</option>';
     micSelect.innerHTML = '<option value="">Loading microphones...</option>';
 
-    try {
-      // Prompt for temporary permission to enumerate devices
-      const tempStream = await navigator.mediaDevices.getUserMedia({ 
-        audio: { 
-          echoCancellation: true, 
-          noiseSuppression: true, 
-          autoGainControl: true 
-        }, 
-        video: true 
-      }).catch(() => null);
+    this.stopCameraPreview();
 
-      if (tempStream) {
-        tempStream.getTracks().forEach(track => track.stop());
+    const videoPreview = document.getElementById('settings-video-preview');
+    const placeholder = document.getElementById('settings-video-placeholder');
+
+    const preferredCam = localStorage.getItem('syncra_preferred_camera_id');
+    const preferredMic = localStorage.getItem('syncra_preferred_mic_id');
+
+    try {
+      // 1. Request single getUserMedia stream for both audio and video to prompt/grant permissions
+      const constraints = {
+        video: preferredCam ? { deviceId: { ideal: preferredCam } } : true,
+        audio: true
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      this.previewStream = stream;
+
+      // 2. Stop audio tracks immediately so mic is not in use during preview
+      stream.getAudioTracks().forEach(track => track.stop());
+
+      // 3. Render the video preview
+      if (videoPreview && stream.getVideoTracks().length > 0) {
+        videoPreview.srcObject = stream;
+        videoPreview.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
       }
-      
+
+      // 4. Enumerate devices now that permissions are active
       const devices = await navigator.mediaDevices.enumerateDevices();
-      
       const cameras = devices.filter(d => d.kind === 'videoinput');
       const microphones = devices.filter(d => d.kind === 'audioinput');
 
+      // Populate selects
       cameraSelect.innerHTML = cameras.map(c => 
         `<option value="${c.deviceId}">${ui.escapeHtml(c.label || `Camera ${cameraSelect.options.length}`)}</option>`
       ).join('') || '<option value="">No cameras found</option>';
@@ -271,20 +283,34 @@ export const settings = {
         `<option value="${m.deviceId}">${ui.escapeHtml(m.label || `Microphone ${micSelect.options.length}`)}</option>`
       ).join('') || '<option value="">No microphones found</option>';
 
-      // Re-select saved devices
-      const savedCamera = localStorage.getItem('syncra_preferred_camera_id');
-      const savedMic = localStorage.getItem('syncra_preferred_mic_id');
-
-      if (savedCamera && [...cameraSelect.options].some(opt => opt.value === savedCamera)) {
-        cameraSelect.value = savedCamera;
+      // Pre-select active options
+      let activeCamId = preferredCam;
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        activeCamId = videoTrack.getSettings().deviceId || preferredCam;
       }
-      if (savedMic && [...micSelect.options].some(opt => opt.value === savedMic)) {
-        micSelect.value = savedMic;
+
+      if (activeCamId && [...cameraSelect.options].some(opt => opt.value === activeCamId)) {
+        cameraSelect.value = activeCamId;
+      } else if (cameras.length > 0) {
+        cameraSelect.value = cameras[0].deviceId;
+      }
+
+      if (preferredMic && [...micSelect.options].some(opt => opt.value === preferredMic)) {
+        micSelect.value = preferredMic;
+      } else if (microphones.length > 0) {
+        micSelect.value = microphones[0].deviceId;
       }
     } catch (err) {
-      console.error('Error enumerating devices:', err);
+      console.error('Error loading devices in settings:', err);
       cameraSelect.innerHTML = '<option value="">Permission denied / Error</option>';
       micSelect.innerHTML = '<option value="">Permission denied / Error</option>';
+      if (videoPreview) videoPreview.style.display = 'none';
+      if (placeholder) {
+        placeholder.style.display = 'flex';
+        const span = placeholder.querySelector('span');
+        if (span) span.textContent = 'Camera/Microphone is blocked or unavailable';
+      }
     }
   },
 
@@ -509,7 +535,7 @@ export const settings = {
 
     try {
       const constraints = {
-        video: cameraId ? { deviceId: { exact: cameraId } } : true,
+        video: cameraId ? { deviceId: { ideal: cameraId } } : true,
         audio: false,
       };
 

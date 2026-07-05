@@ -4,6 +4,36 @@
 
 import { ui } from '../ui.js';
 
+function getUserMediaWithTimeout(constraints, timeoutMs = 4000) {
+  return new Promise((resolve, reject) => {
+    let completed = false;
+    const timeout = setTimeout(() => {
+      if (!completed) {
+        completed = true;
+        reject(new Error('MediaDeviceTimeout: getUserMedia took too long'));
+      }
+    }, timeoutMs);
+
+    navigator.mediaDevices.getUserMedia(constraints)
+      .then(stream => {
+        if (!completed) {
+          completed = true;
+          clearTimeout(timeout);
+          resolve(stream);
+        } else {
+          stream.getTracks().forEach(track => track.stop());
+        }
+      })
+      .catch(err => {
+        if (!completed) {
+          completed = true;
+          clearTimeout(timeout);
+          reject(err);
+        }
+      });
+  });
+}
+
 const rtcConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -36,7 +66,7 @@ export const P2PEngine = {
       localAvatarCircle.textContent = ui.getInitials(this.username);
     }
 
-    // 1. Get local media stream with persistent settings
+    // 1. Get local media stream with persistent settings and cascading fallbacks
     try {
       const cameraDeviceId = localStorage.getItem('syncra_preferred_camera_id');
       const micDeviceId = localStorage.getItem('syncra_preferred_mic_id');
@@ -55,7 +85,7 @@ export const P2PEngine = {
         audio: audioConstraints
       };
 
-      this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      this.localStream = await getUserMediaWithTimeout(constraints, 4000);
       const localVideo = document.getElementById('local-video');
       if (localVideo) {
         localVideo.srcObject = this.localStream;
@@ -67,22 +97,47 @@ export const P2PEngine = {
     } catch (err) {
       console.warn('[P2PEngine] Error accessing media with saved constraints, falling back to defaults:', err);
       try {
-        this.localStream = await navigator.mediaDevices.getUserMedia({
+        this.localStream = await getUserMediaWithTimeout({
           video: true,
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true
           }
-        });
+        }, 4000);
         const localVideo = document.getElementById('local-video');
         if (localVideo) localVideo.srcObject = this.localStream;
         const localVoiceIndicator = document.getElementById('local-voice-indicator');
         if (localVoiceIndicator) this.setupAudioVisualizer(this.localStream, localVoiceIndicator);
       } catch (fallbackErr) {
-        console.error('[P2PEngine] Fatal: Could not access camera or microphone:', fallbackErr);
-        ui.showToast('Could not access microphone/camera. Please check permissions.', 'error');
-        throw fallbackErr;
+        console.warn('[P2PEngine] Failed to access default camera/mic, trying audio-only fallback...', fallbackErr);
+        try {
+          this.localStream = await getUserMediaWithTimeout({
+            video: false,
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          }, 3000);
+          const localVideo = document.getElementById('local-video');
+          if (localVideo) localVideo.srcObject = this.localStream;
+          const localVoiceIndicator = document.getElementById('local-voice-indicator');
+          if (localVoiceIndicator) this.setupAudioVisualizer(this.localStream, localVoiceIndicator);
+          
+          this.isCameraOff = true;
+          const localPlaceholder = document.getElementById('local-avatar-placeholder');
+          if (localPlaceholder) localPlaceholder.classList.add('active');
+        } catch (audioErr) {
+          console.error('[P2PEngine] Fatal: Could not access microphone or camera, joining with empty stream:', audioErr);
+          ui.showToast('Camera and microphone blocked or in use. Joining as viewer.', 'warning');
+          
+          this.localStream = new MediaStream();
+          this.isMuted = true;
+          this.isCameraOff = true;
+          const localPlaceholder = document.getElementById('local-avatar-placeholder');
+          if (localPlaceholder) localPlaceholder.classList.add('active');
+        }
       }
     }
 
@@ -104,6 +159,9 @@ export const P2PEngine = {
         // We are the joining peer, so we initiate the offer (glare prevention)
         await this.createPeerConnection(peer.id, true);
       }
+      if (typeof window.syncraUpdateParticipants === 'function') {
+        window.syncraUpdateParticipants();
+      }
     });
 
     // Fired when another user joins: we wait for their offer
@@ -111,6 +169,9 @@ export const P2PEngine = {
       console.log('[P2PEngine] New peer joined:', peer.id);
       this.peerUsernames[peer.id] = peer.username;
       await this.createPeerConnection(peer.id, false);
+      if (typeof window.syncraUpdateParticipants === 'function') {
+        window.syncraUpdateParticipants();
+      }
     });
 
     // Fired when receiving a WebRTC offer
@@ -196,6 +257,9 @@ export const P2PEngine = {
     this.socket.on('user-left', (peerId) => {
       console.log('[P2PEngine] Peer disconnected:', peerId);
       this.handlePeerDisconnect(peerId);
+      if (typeof window.syncraUpdateParticipants === 'function') {
+        window.syncraUpdateParticipants();
+      }
     });
   },
 
