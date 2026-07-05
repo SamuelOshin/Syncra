@@ -74,8 +74,9 @@ export const webrtc = {
 
       // LiveKit engine: extract the audio track from the room's local participant
       if (this.activeEngine.room) {
+        const sdk = window.LivekitClient || window.LiveKitClient;
         const audioTrack = this.activeEngine.room.localParticipant.getTrack(
-          window.LiveKitClient?.Track?.Source?.Microphone
+          sdk?.Track?.Source?.Microphone
         );
         if (audioTrack && audioTrack.track && audioTrack.track.mediaStreamTrack) {
           return new MediaStream([audioTrack.track.mediaStreamTrack]);
@@ -86,6 +87,25 @@ export const webrtc = {
     }
 
     return null;
+  },
+
+  getParticipantsList(localUserName) {
+    const list = [];
+    if (localUserName) {
+      list.push({ name: localUserName, isMe: true });
+    }
+    if (this.activeEngine) {
+      if (this.activeEngine.peerUsernames) {
+        for (const peerId in this.activeEngine.peerUsernames) {
+          list.push({ name: this.activeEngine.peerUsernames[peerId], isMe: false });
+        }
+      } else if (this.activeEngine.room && this.activeEngine.room.remoteParticipants) {
+        this.activeEngine.room.remoteParticipants.forEach(participant => {
+          list.push({ name: participant.identity || 'Participant', isMe: false });
+        });
+      }
+    }
+    return list;
   },
 
   cleanup() {

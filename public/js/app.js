@@ -46,6 +46,8 @@ const btnCamera = document.getElementById('btn-camera');
 const btnLeave = document.getElementById('btn-leave');
 const btnExport = document.getElementById('btn-export-transcript');
 const btnToggleCaptions = document.getElementById('btn-toggle-captions');
+const btnCopyMeetingLink = document.getElementById('btn-copy-meeting-link');
+const btnCopyMeetingLinkFooter = document.getElementById('btn-copy-meeting-link-footer');
 
 // State Variables
 let currentUser = null;
@@ -120,6 +122,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     currentUser = e.detail;
   });
 
+  window.syncraUpdateParticipants = updateActiveParticipantsUI;
   window.checkSessionAndRoute = checkSessionAndRoute; // Expose for SPA search routing
   await checkSessionAndRoute();
 });
@@ -148,7 +151,15 @@ async function checkSessionAndRoute() {
   if (splashLoader) splashLoader.classList.remove('hidden');
   if (splashError) splashError.classList.add('hidden');
   if (logoIcon) {
-    logoIcon.innerHTML = '<i data-lucide="aperture"></i>';
+    logoIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-aperture">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="14.31" y1="8" x2="20.05" y2="17.94"></line>
+      <line x1="9.69" y1="8" x2="21.17" y2="8"></line>
+      <line x1="7.38" y1="12" x2="13.12" y2="2.06"></line>
+      <line x1="9.69" y1="16" x2="3.95" y2="6.06"></line>
+      <line x1="14.31" y1="16" x2="2.83" y2="16"></line>
+      <line x1="16.62" y1="12" x2="10.88" y2="21.94"></line>
+    </svg>`;
     logoIcon.className = 'logo-icon animate-pulse';
   }
   if (window.lucide) window.lucide.createIcons();
@@ -330,6 +341,16 @@ function initGlobalEvents() {
   if (btnToggleCaptions) {
     btnToggleCaptions.addEventListener('click', handleToggleCaptionsClick);
   }
+  if (btnCopyMeetingLink) {
+    btnCopyMeetingLink.addEventListener('click', () => {
+      if (activeRoomId) ui.copyMeetingLink(activeRoomId);
+    });
+  }
+  if (btnCopyMeetingLinkFooter) {
+    btnCopyMeetingLinkFooter.addEventListener('click', () => {
+      if (activeRoomId) ui.copyMeetingLink(activeRoomId);
+    });
+  }
 
   // Interactive Language Toggle in Header
   document.querySelector('.translation-mode').addEventListener('click', () => {
@@ -509,12 +530,15 @@ async function joinRoom(roomId, name, lang) {
       speech.init(userLang, onFinalTranscript, onInterimTranscript);
 
       // 4. Switch screens
+      greenRoom.hide();
       showScreen(callScreen);
+      updateActiveParticipantsUI();
       if (window.lucide) {
         window.lucide.createIcons();
       }
     } catch (err) {
       console.error('Error joining meeting:', err);
+      greenRoom.hide();
       ui.showToast('Could not access media devices or connect to room.', 'error');
     }
   });
@@ -602,8 +626,10 @@ socket.on('user-left', (peerId) => {
     }
     interimCard.innerHTML = `
       <div class="caption-meta">
-        <strong>${name}</strong>
-        <span class="interim-badge">speaking...</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <strong class="speaker-name" style="color: var(--primary); text-transform: uppercase;">${name}</strong>
+          <span class="interim-badge">speaking...</span>
+        </div>
       </div>
       <p class="original">${text}</p>
     `;
@@ -633,7 +659,10 @@ socket.on('new-caption', (data) => {
 
   card.innerHTML = `
     <div class="caption-meta">
-      <span class="speaker-name">${ui.escapeHtml(data.speakerName)}</span>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="speaker-name">${ui.escapeHtml(data.speakerName)}</span>
+        <span class="caption-lang-badge">${ui.escapeHtml(data.sourceLang.toUpperCase())}</span>
+      </div>
       <span class="latency-badge">⚡ ${data.latency}s</span>
     </div>
     <p class="original">${ui.escapeHtml(data.originalText)}</p>
@@ -648,6 +677,9 @@ socket.on('new-caption', (data) => {
   }, 1500);
 
   captionStream.scrollTop = captionStream.scrollHeight;
+
+  // Refresh active participants UI to catch detected spoken languages
+  updateActiveParticipantsUI();
 });
 
 // ==========================================
@@ -1024,4 +1056,44 @@ function makeElementDraggable(el, handle) {
     document.removeEventListener('touchend', closeDragElement);
     document.removeEventListener('touchmove', elementTouchDrag);
   }
+}
+
+function updateActiveParticipantsUI() {
+  const countEl = document.getElementById('active-participants-count');
+  const listEl = document.getElementById('call-participants-list');
+  if (!listEl) return;
+
+  const participants = webrtc.getParticipantsList(userName);
+  if (countEl) {
+    countEl.textContent = participants.length;
+  }
+
+  listEl.innerHTML = '';
+  participants.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'call-participant-row';
+    
+    // Determine languages
+    let langTagText = 'Active';
+    if (p.isMe) {
+      langTagText = `Spoken: ${userLang.toUpperCase()} &middot; Heard: ${targetLang.toUpperCase()}`;
+    } else {
+      // Find if this peer has sent any transcripts
+      const peerTrans = liveTranscripts.find(t => t.speakerName === p.name);
+      if (peerTrans) {
+        langTagText = `Spoken: ${peerTrans.sourceLang.toUpperCase()} &middot; Heard: ${peerTrans.targetLang.toUpperCase()}`;
+      } else {
+        langTagText = `Connected`;
+      }
+    }
+
+    row.innerHTML = `
+      <div class="call-participant-info">
+        <span class="call-participant-dot"></span>
+        <span class="call-participant-name">${ui.escapeHtml(p.name)} ${p.isMe ? '(You)' : ''}</span>
+      </div>
+      <span class="call-participant-tag">${langTagText}</span>
+    `;
+    listEl.appendChild(row);
+  });
 }

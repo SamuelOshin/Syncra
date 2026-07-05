@@ -39,7 +39,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https://*"],
-      connectSrc: ["'self'", "wss://*", "ws://*", "https://api.deepgram.com", "https://api.livekit.co", "https://*.livekit.cloud"],
+      connectSrc: ["'self'", "wss://*", "ws://*", "https://api.deepgram.com", "https://api.livekit.co", "https://*.livekit.cloud", "https://cdn.jsdelivr.net", "https://unpkg.com"],
       mediaSrc: ["'self'", "blob:", "data:"],
     }
   }
@@ -84,8 +84,12 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/chat', chatRoutes);
 
 // HTML Routing for SPA Room Links
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'app.html'));
+});
+
 app.get('/meet/:roomId', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+  res.sendFile(path.join(process.cwd(), 'public', 'app.html'));
 });
 
 // Global Error Handler (Must be registered after all routes)

@@ -183,17 +183,46 @@ export const onboarding = {
     cameraSelect.innerHTML = '<option value="">Loading cameras...</option>';
     micSelect.innerHTML = '<option value="">Loading microphones...</option>';
 
+    this.stopCameraPreview();
+
+    const videoPreview = document.getElementById('onboarding-video-preview');
+    const placeholder = document.getElementById('onboarding-video-placeholder');
+    const container = videoPreview?.closest('.onboarding-preview-container');
+
+    const preferredCam = localStorage.getItem('syncra_preferred_camera_id');
+    const preferredMic = localStorage.getItem('syncra_preferred_mic_id');
+
     try {
-      // Prompt for temporary permissions to enumerate
-      const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true }).catch(() => null);
-      if (tempStream) {
-        tempStream.getTracks().forEach(track => track.stop());
+      // 1. Request single getUserMedia stream for both audio and video to prompt/grant permissions
+      const constraints = {
+        video: preferredCam ? { deviceId: { ideal: preferredCam } } : true,
+        audio: true
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      this.previewStream = stream;
+
+      // 2. Stop audio tracks immediately so mic is not in use during preview
+      stream.getAudioTracks().forEach(track => track.stop());
+
+      // 3. Render the video preview
+      if (videoPreview && stream.getVideoTracks().length > 0) {
+        videoPreview.srcObject = stream;
+        videoPreview.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+        if (container) container.classList.add('active-preview');
+      } else {
+        if (videoPreview) videoPreview.style.display = 'none';
+        if (placeholder) placeholder.style.display = 'flex';
+        if (container) container.classList.remove('active-preview');
       }
-      
+
+      // 4. Enumerate devices now that permissions are active
       const devices = await navigator.mediaDevices.enumerateDevices();
       const cameras = devices.filter(d => d.kind === 'videoinput');
       const microphones = devices.filter(d => d.kind === 'audioinput');
 
+      // Populate selects
       cameraSelect.innerHTML = cameras.map((c, i) => 
         `<option value="${c.deviceId}">${ui.escapeHtml(c.label || `Camera ${i + 1}`)}</option>`
       ).join('') || '<option value="">No cameras found</option>';
@@ -202,11 +231,35 @@ export const onboarding = {
         `<option value="${m.deviceId}">${ui.escapeHtml(m.label || `Microphone ${i + 1}`)}</option>`
       ).join('') || '<option value="">No microphones found</option>';
 
-      this.startCameraPreview();
+      // Pre-select active options
+      let activeCamId = preferredCam;
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        activeCamId = videoTrack.getSettings().deviceId || preferredCam;
+      }
+
+      if (activeCamId && cameras.some(c => c.deviceId === activeCamId)) {
+        cameraSelect.value = activeCamId;
+      } else if (cameras.length > 0) {
+        cameraSelect.value = cameras[0].deviceId;
+      }
+
+      if (preferredMic && microphones.some(m => m.deviceId === preferredMic)) {
+        micSelect.value = preferredMic;
+      } else if (microphones.length > 0) {
+        micSelect.value = microphones[0].deviceId;
+      }
     } catch (err) {
       console.error('Error loading devices in onboarding:', err);
       cameraSelect.innerHTML = '<option value="">Permission denied</option>';
       micSelect.innerHTML = '<option value="">Permission denied</option>';
+      if (videoPreview) videoPreview.style.display = 'none';
+      if (placeholder) {
+        placeholder.style.display = 'flex';
+        const span = placeholder.querySelector('span');
+        if (span) span.textContent = 'Camera is blocked or unavailable';
+      }
+      if (container) container.classList.remove('active-preview');
     }
   },
 
@@ -225,7 +278,7 @@ export const onboarding = {
 
     try {
       const constraints = {
-        video: { deviceId: { exact: cameraId } },
+        video: { deviceId: { ideal: cameraId } },
         audio: false
       };
 

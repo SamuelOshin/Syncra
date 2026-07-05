@@ -30,12 +30,7 @@ let _onJoinRoom = null;
 
 export const dashboard = {
   init(currentUser, onJoinRoom) {
-    // 1. Schedule Meeting Triggers (Sidebar, Dashboard Card & Calendar Link)
-    const btnSidebarSchedule = document.getElementById('btn-sidebar-schedule');
-    if (btnSidebarSchedule) {
-      btnSidebarSchedule.addEventListener('click', () => ui.toggleModal(scheduleModal, true));
-    }
-
+    // 1. Schedule Meeting Triggers (Dashboard Card & Calendar Link)
     const btnOpenSchedule = document.getElementById('btn-open-schedule');
     if (btnOpenSchedule) {
       btnOpenSchedule.addEventListener('click', () => ui.toggleModal(scheduleModal, true));
