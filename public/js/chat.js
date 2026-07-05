@@ -41,8 +41,6 @@ export const chat = {
     // 3. Setup UI event listeners
     this.setupUIEventListeners();
 
-    // 4. Populate source language selector
-    this.populateLanguageSelector();
   },
 
   async refreshChats() {
@@ -191,7 +189,6 @@ export const chat = {
     // Listen for profile updates to keep currentUser synced
     document.addEventListener('syncra-profile-updated', (e) => {
       this.currentUser = e.detail;
-      this.populateLanguageSelector();
     });
 
     // Message Composer Form Submission
@@ -210,16 +207,6 @@ export const chat = {
         this.sendTypingStatus(false);
       }, 2000);
     });
-  },
-
-  populateLanguageSelector() {
-    const select = document.getElementById('chat-source-lang-select');
-    if (!select) return;
-
-    select.innerHTML = Object.entries(this.languages).map(([code, name]) => {
-      const selected = code === (this.currentUser.preferredLanguage || 'en') ? 'selected' : '';
-      return `<option value="${code}" ${selected}>${name}</option>`;
-    }).join('');
   },
 
   renderChatList() {
