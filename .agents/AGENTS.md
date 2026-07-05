@@ -123,3 +123,22 @@ my-app/
 - Use `any` or write untyped API routes.
 - Ignore database migrations or write manual schema updates directly in production databases.
 - Write code without error handling, logging, or monitoring considerations.
+
+---
+
+## UI/UX Error Handling & Feedback Guidelines
+
+For a professional user experience (UX) and clean code, always enforce the following distinction and design rules when presenting validation states, errors, or feedback:
+
+### 1. Error Placement & Selection
+- **Inline Errors (Form Validation / Fields)**: Use for input validations, missing mandatory fields, and format validation. They must appear directly below the field in red, including both text and a warning icon.
+- **Toast Notifications (Transient / Non-blocking)**: Use only for temporary updates, success status messages, or background non-blocking operations. They must automatically dismiss in 3–5 seconds and must not hijack keyboard focus.
+- **Modal Dialog Errors (Critical / Blocking)**: Use for app-blocking states (e.g., mic/camera access blocked, network disconnected, expired session). Always provide a clear description of the issue and a single CTA recovery path.
+
+### 2. Follow DRY UI Principles
+- Never write custom inline DOM generation scripts for standard input errors.
+- Always use the centralized, reusable UI error functions defined in `public/js/ui.js`:
+  - `ui.showInputError(inputElement, errorMessage)` to dynamically show red highlighted inputs and error labels.
+  - `ui.clearInputError(inputElement)` to remove error states.
+  - `ui.clearFormErrors(formElement)` to reset entire forms.
+- Ensure all inputs undergoing validation have corresponding styling rules in CSS for their `disabled` and `.error` visual states (e.g., `border-color: #EF4444`, `cursor: not-allowed`).

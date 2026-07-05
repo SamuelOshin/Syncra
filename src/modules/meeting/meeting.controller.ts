@@ -3,7 +3,7 @@ import { MeetingRepository } from './meeting.repository';
 import { successResponse } from '../../utils/response';
 import { NotFoundError, ForbiddenError } from '../../utils/errors';
 import config from '../../config';
-import { NotificationRepository } from '../notifications/notification.repository';
+import { notificationService } from '../notifications/notification.service';
 import { buildPaginationMeta, parsePagination } from '../../utils/pagination';
 import { randomUUID } from 'crypto';
 
@@ -31,8 +31,7 @@ export class MeetingController {
         projectId: projectId || null,
       });
 
-      const notificationRepository = new NotificationRepository();
-      await notificationRepository.create({
+      await notificationService.createNotification({
         id: randomUUID(),
         userId: hostId,
         title: 'Meeting Scheduled',

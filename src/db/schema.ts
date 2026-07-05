@@ -292,5 +292,30 @@ export const sqliteMessageTranslations = sqliteTable('message_translations', {
 
 export const messageTranslations = isPostgres ? pgMessageTranslations : sqliteMessageTranslations;
 
+// ==========================================
+// 12. PUSH SUBSCRIPTIONS TABLE
+// ==========================================
+
+export const pgPushSubscriptions = pgTable('push_subscriptions', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  userId: varchar('user_id', { length: 36 }).notNull(),
+  endpoint: text('endpoint').notNull(),
+  p256dh: varchar('p256dh', { length: 255 }).notNull(),
+  auth: varchar('auth', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const sqlitePushSubscriptions = sqliteTable('push_subscriptions', {
+  id: sqliteText('id').primaryKey(),
+  userId: sqliteText('user_id').notNull(),
+  endpoint: sqliteText('endpoint').notNull(),
+  p256dh: sqliteText('p256dh').notNull(),
+  auth: sqliteText('auth').notNull(),
+  createdAt: sqliteText('created_at').default('(CURRENT_TIMESTAMP)').notNull(),
+});
+
+export const pushSubscriptions = isPostgres ? pgPushSubscriptions : sqlitePushSubscriptions;
+
+
 
 

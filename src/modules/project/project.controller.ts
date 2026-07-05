@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 import { ProjectRepository } from './project.repository';
-import { NotificationRepository } from '../notifications/notification.repository';
+import { notificationService } from '../notifications/notification.service';
 import { successResponse } from '../../utils/response';
 import { NotFoundError, ForbiddenError } from '../../utils/errors';
 import { buildPaginationMeta, parsePagination } from '../../utils/pagination';
 
 const projectRepository = new ProjectRepository();
-const notificationRepository = new NotificationRepository();
+
 
 export class ProjectController {
   async getProjects(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -38,7 +38,7 @@ export class ProjectController {
         description: description || ''
       });
 
-      await notificationRepository.create({
+      await notificationService.createNotification({
         id: randomUUID(),
         userId,
         title: 'Project Created',
@@ -72,7 +72,7 @@ export class ProjectController {
 
       await projectRepository.delete(id);
 
-      await notificationRepository.create({
+      await notificationService.createNotification({
         id: randomUUID(),
         userId,
         title: 'Project Deleted',

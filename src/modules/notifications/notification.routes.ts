@@ -12,4 +12,10 @@ router.get('/', (req, res, next) => notificationController.getNotifications(req,
 router.post('/read', (req, res, next) => notificationController.markAsRead(req, res, next));
 router.delete('/', (req, res, next) => notificationController.clearNotifications(req, res, next));
 
+// Web Push endpoints
+router.get('/push/vapid-key', (req, res, next) => notificationController.getVapidKey(req, res, next));
+router.post('/push/subscribe', (req, res, next) => notificationController.subscribePush(req, res, next));
+router.post('/push/unsubscribe', (req, res, next) => notificationController.unsubscribePush(req, res, next));
+router.post('/push/test', (req, res, next) => notificationController.testPush(req, res, next));
+
 export default router;

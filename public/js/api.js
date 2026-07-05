@@ -294,6 +294,44 @@ export const api = {
       throw err;
     }
     return payload;
-  }
+  },
+
+  async getVapidKey() {
+    const res = await fetch('/api/notifications/push/vapid-key');
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.message || 'Failed to fetch VAPID key');
+    return payload;
+  },
+
+  async subscribePush(subscription) {
+    const res = await fetch('/api/notifications/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(subscription)
+    });
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.message || 'Failed to register push subscription');
+    return payload;
+  },
+
+  async unsubscribePush(endpoint) {
+    const res = await fetch('/api/notifications/push/unsubscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint })
+    });
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.message || 'Failed to remove push subscription');
+    return payload;
+  },
+
+  async testPushNotification() {
+    const res = await fetch('/api/notifications/push/test', {
+      method: 'POST'
+    });
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.message || 'Failed to send test push notification');
+    return payload;
+  },
 };
 export default api;
