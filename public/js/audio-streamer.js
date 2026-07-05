@@ -15,16 +15,18 @@ export const audioStreamer = {
   roomId: null,
   language: null,
   speakerName: null,
+  targetLanguage: null,
 
   /**
    * Initialize the audio streamer with socket and meeting info.
    * Does NOT start streaming — call start() after.
    */
-  init(socket, roomId, language, speakerName) {
+  init(socket, roomId, language, speakerName, targetLanguage) {
     this.socket = socket;
     this.roomId = roomId;
     this.language = language;
     this.speakerName = speakerName;
+    this.targetLanguage = targetLanguage;
   },
 
   /**
@@ -118,7 +120,8 @@ export const audioStreamer = {
       this.socket.emit('audio-stream-start', {
         roomId: this.roomId,
         language: this.language,
-        speakerName: this.speakerName
+        speakerName: this.speakerName,
+        targetLanguage: this.targetLanguage
       });
 
       this.isStreaming = true;
@@ -146,7 +149,8 @@ export const audioStreamer = {
         this.socket.emit('audio-stream-start', {
           roomId: this.roomId,
           language: this.language,
-          speakerName: this.speakerName
+          speakerName: this.speakerName,
+          targetLanguage: this.targetLanguage
         });
       }
       console.log('[AudioStreamer] Unmuted — resumed audio streaming');

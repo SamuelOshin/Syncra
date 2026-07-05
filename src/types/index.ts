@@ -1,4 +1,4 @@
-export type SupportedLanguage = 'en' | 'fr' | 'es' | 'de' | 'ja';
+export type SupportedLanguage = 'en' | 'fr' | 'es' | 'de' | 'ja' | 'pcm';
 
 export interface TranslationRequest {
   roomId: string;

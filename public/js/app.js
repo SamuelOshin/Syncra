@@ -495,7 +495,7 @@ async function joinRoom(roomId, name, lang) {
         const localAudioStream = webrtc.getLocalAudioStream();
         if (localAudioStream) {
           speech.setServerSTTActive(true);
-          audioStreamer.init(socket, roomId, userLang, userName);
+          audioStreamer.init(socket, roomId, userLang, userName, targetLang);
           await audioStreamer.start(localAudioStream);
           console.log('[JoinRoom] Server-side STT audio streaming started.');
         } else {
@@ -676,7 +676,7 @@ function handleMuteClick() {
       try {
         const localAudioStream = webrtc.getLocalAudioStream();
         if (localAudioStream) {
-          audioStreamer.init(socket, activeRoomId, userLang, userName);
+          audioStreamer.init(socket, activeRoomId, userLang, userName, targetLang);
           await audioStreamer.start(localAudioStream);
           console.log('[MuteClick] STT streaming restarted with fresh audio track.');
         } else {

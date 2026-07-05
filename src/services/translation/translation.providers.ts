@@ -17,6 +17,10 @@ export class DeepLProvider implements TranslationProvider {
   }
 
   async translate(text: string, sourceLang: string, targetLang: string): Promise<string> {
+    if (sourceLang.toLowerCase() === 'pcm' || targetLang.toLowerCase() === 'pcm') {
+      throw new Error('DeepL does not support Nigerian Pidgin (pcm) translation.');
+    }
+
     const key = config.deeplApiKey;
     if (!key) throw new Error('DeepL API key not configured');
 
@@ -126,7 +130,8 @@ export class OpenRouterLLMProvider implements TranslationProvider {
       ru: 'Russian',
       ar: 'Arabic',
       hi: 'Hindi',
-      ko: 'Korean'
+      ko: 'Korean',
+      pcm: 'Nigerian Pidgin'
     };
 
     const sourceName = languageNames[sourceLang] || sourceLang;
@@ -135,6 +140,9 @@ export class OpenRouterLLMProvider implements TranslationProvider {
     let prompt = `You are a professional, real-time translator. Translate the following text from ${sourceName} into natural, fluent ${targetName}. `;
     if (sourceLang === 'fr') {
       prompt += "Note that the spoken French may contain West African/Beninese French phrasing, accents, or local terminology. ";
+    }
+    if (sourceLang === 'pcm') {
+      prompt += "Note that the input is in Nigerian Pidgin English. Translate Pidgin English terms, syntax, and grammar accurately and contextually into fluent, natural-sounding target language. ";
     }
     prompt += `Output ONLY the ${targetName} translation. Do not add explanations, notes, quotes, or any conversational filler.`;
 
