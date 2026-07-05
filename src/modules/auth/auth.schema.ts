@@ -107,6 +107,8 @@ export const onboardingSchema = z.object({
       .max(50, 'Name must be under 50 characters')
       .regex(/^[a-zA-Z0-9\s.\-_]+$/, 'Name contains invalid characters'),
     preferredLanguage: z.enum(['en', 'fr', 'es', 'de', 'ja', 'pt', 'it', 'nl', 'zh', 'ru', 'ar', 'hi', 'ko']).default('en'),
+    defaultSpeakingLanguage: z.enum(['en', 'fr', 'es', 'de', 'ja']).default('en'),
+    defaultTranslationLanguage: z.enum(['en', 'fr', 'es', 'de', 'ja']).default('fr'),
     firstProjectName: z.string().min(3, 'Project name must be at least 3 characters').max(50, 'Project name must be under 50 characters').optional(),
     firstProjectDesc: z.string().max(200, 'Project description must be under 200 characters').optional(),
   }),

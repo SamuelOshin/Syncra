@@ -6,6 +6,7 @@ import { api } from './api.js';
 import { ui } from './ui.js';
 import { auth } from './auth.js';
 import { onboarding } from './onboarding.js';
+import { greenRoom } from './green-room.js';
 import { dashboard } from './dashboard.js';
 import { webrtc } from './webrtc.js';
 import { speech } from './speech.js';
@@ -295,6 +296,25 @@ function initGlobalEvents() {
     });
   }
 
+  // Theme Toggle Button
+  const btnThemeToggle = document.getElementById('btn-theme-toggle');
+  if (btnThemeToggle) {
+    btnThemeToggle.addEventListener('click', () => {
+      const currentTheme = localStorage.getItem('syncra_theme') === 'dark' ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('syncra_theme', newTheme);
+      
+      // Apply theme via settings controller
+      settings.applyTheme(newTheme);
+      
+      // Update selection in settings pane if present
+      const themeSelect = document.getElementById('settings-theme');
+      if (themeSelect) themeSelect.value = newTheme;
+      
+      ui.showToast(`Switched to ${newTheme === 'dark' ? 'Dark' : 'Light'} Mode`, 'success');
+    });
+  }
+
   // Call controls click bindings
   btnMute.addEventListener('click', handleMuteClick);
   btnCamera.addEventListener('click', handleCameraClick);
@@ -431,64 +451,68 @@ async function joinRoom(roomId, name, lang) {
 
   activeRoomId = roomId;
   userName = name;
-  userLang = lang;
-  targetLang = userLang === 'en' ? 'fr' : 'en';
-  liveTranscripts = []; // Reset transcript cache for new call
 
-  // Silently update browser URL without reloading
-  window.history.pushState({}, '', `/meet/${roomId}`);
+  // Intercept call entrance with the Pre-Flight Green Room check!
+  greenRoom.init(roomId, name, currentUser, async (selectedSettings) => {
+    userLang = selectedSettings.speakLang;
+    targetLang = selectedSettings.translateLang;
+    liveTranscripts = []; // Reset transcript cache for new call
 
-  // Update Call Header
-  roomTitle.textContent = `#${roomId}`;
-  userLangBadge.textContent = userLang.toUpperCase();
-  targetLangBadge.textContent = targetLang.toUpperCase();
+    // Silently update browser URL without reloading
+    window.history.pushState({}, '', `/meet/${roomId}`);
 
-  // Reset captions panel visibility, position, and button state on join
-  const captionsPanel = document.querySelector('.captions-panel');
-  if (captionsPanel) {
-    captionsPanel.classList.remove('hidden');
-    captionsPanel.style.top = '';
-    captionsPanel.style.left = '';
-    captionsPanel.style.bottom = '';
-    captionsPanel.style.right = '';
-  }
-  if (btnToggleCaptions) {
-    btnToggleCaptions.className = 'ctrl-btn active';
-  }
+    // Update Call Header
+    roomTitle.textContent = `#${roomId}`;
+    userLangBadge.textContent = userLang.toUpperCase();
+    targetLangBadge.textContent = targetLang.toUpperCase();
 
-  try {
-    const mediaEngine = currentMeeting.mediaEngine;
+    // Reset captions panel visibility, position, and button state on join
+    const captionsPanel = document.querySelector('.captions-panel');
+    if (captionsPanel) {
+      captionsPanel.classList.remove('hidden');
+      captionsPanel.style.top = '';
+      captionsPanel.style.left = '';
+      captionsPanel.style.bottom = '';
+      captionsPanel.style.right = '';
+    }
+    if (btnToggleCaptions) {
+      btnToggleCaptions.className = 'ctrl-btn active';
+    }
 
-    // 2. Connect to the media engine (handles local stream and room connection)
-    await webrtc.connect(roomId, userName, mediaEngine, socket);
-
-    // 2b. Start server-side STT audio streaming (works on all platforms including mobile)
     try {
-      const localAudioStream = webrtc.getLocalAudioStream();
-      if (localAudioStream) {
-        speech.setServerSTTActive(true);
-        audioStreamer.init(socket, roomId, userLang, userName);
-        await audioStreamer.start(localAudioStream);
-        console.log('[JoinRoom] Server-side STT audio streaming started.');
-      } else {
-        console.warn('[JoinRoom] No local audio stream available, falling back to Web Speech API.');
+      const mediaEngine = currentMeeting.mediaEngine;
+
+      // 2. Connect to the media engine (handles local stream and room connection)
+      await webrtc.connect(roomId, userName, mediaEngine, socket);
+
+      // 2b. Start server-side STT audio streaming (works on all platforms including mobile)
+      try {
+        const localAudioStream = webrtc.getLocalAudioStream();
+        if (localAudioStream) {
+          speech.setServerSTTActive(true);
+          audioStreamer.init(socket, roomId, userLang, userName);
+          await audioStreamer.start(localAudioStream);
+          console.log('[JoinRoom] Server-side STT audio streaming started.');
+        } else {
+          console.warn('[JoinRoom] No local audio stream available, falling back to Web Speech API.');
+        }
+      } catch (sttErr) {
+        console.warn('[JoinRoom] Server-side STT failed to start, falling back to Web Speech API:', sttErr);
       }
-    } catch (sttErr) {
-      console.warn('[JoinRoom] Server-side STT failed to start, falling back to Web Speech API:', sttErr);
-    }
 
-    // 3. Start speech-to-text translation
-    speech.init(userLang, onFinalTranscript, onInterimTranscript);
+      // 3. Start speech-to-text translation
+      speech.init(userLang, onFinalTranscript, onInterimTranscript);
 
-    // 4. Switch screens
-    showScreen(callScreen);
-    if (window.lucide) {
-      window.lucide.createIcons();
+      // 4. Switch screens
+      showScreen(callScreen);
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    } catch (err) {
+      console.error('Error joining meeting:', err);
+      ui.showToast('Could not access media devices or connect to room.', 'error');
     }
-  } catch (err) {
-    console.error('Error joining meeting:', err);
-    ui.showToast('Could not access media devices or connect to room.', 'error');
-  }
+  });
 }
 
 // ==========================================

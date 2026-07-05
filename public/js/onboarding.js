@@ -34,12 +34,17 @@ export const onboarding = {
     // Button event listeners
     btnNext?.replaceWith(btnNext.cloneNode(true));
     btnPrev?.replaceWith(btnPrev.cloneNode(true));
+    
+    const btnSkip = document.getElementById('btn-onboarding-skip');
+    btnSkip?.replaceWith(btnSkip.cloneNode(true));
 
     const newBtnNext = document.getElementById('btn-onboarding-next');
     const newBtnPrev = document.getElementById('btn-onboarding-prev');
+    const newBtnSkip = document.getElementById('btn-onboarding-skip');
 
     newBtnNext?.addEventListener('click', () => this.handleNext());
     newBtnPrev?.addEventListener('click', () => this.handlePrev());
+    newBtnSkip?.addEventListener('click', () => this.skipOnboarding());
 
     // Device changes listeners
     const cameraSelect = document.getElementById('onboarding-camera');
@@ -282,7 +287,7 @@ export const onboarding = {
       if (micId) localStorage.setItem('syncra_preferred_mic_id', micId);
 
       // 2. Submit onboarding identity details to backend
-      const res = await api.completeOnboarding(name, preferredLanguage, projectName, projectDesc);
+      const res = await api.completeOnboarding(name, preferredLanguage, defaultLang, defaultTargetLang, projectName, projectDesc);
       
       ui.setButtonLoading(btnNext, false);
       ui.showToast('Workspace configured successfully!', 'success');
@@ -294,6 +299,38 @@ export const onboarding = {
       }
     } catch (err) {
       ui.setButtonLoading(btnNext, false);
+      ui.showToast(err.message, 'error');
+    }
+  },
+
+  async skipOnboarding() {
+    const btnSkip = document.getElementById('btn-onboarding-skip');
+    ui.setButtonLoading(btnSkip, true, 'Skipping...');
+
+    // Use sensible defaults
+    const name = this.user.name || 'User';
+    const preferredLanguage = this.user.preferredLanguage || 'en';
+    const defaultLang = 'en';
+    const defaultTargetLang = 'fr';
+
+    try {
+      // 1. Save defaults to local storage
+      localStorage.setItem('syncra_default_lang', defaultLang);
+      localStorage.setItem('syncra_default_target_lang', defaultTargetLang);
+
+      // 2. Submit onboarding identity details with defaults
+      const res = await api.completeOnboarding(name, preferredLanguage, defaultLang, defaultTargetLang);
+      
+      ui.setButtonLoading(btnSkip, false);
+      ui.showToast('Workspace set up with defaults', 'info');
+      
+      this.hide();
+      
+      if (this.onComplete) {
+        this.onComplete(res.data.user);
+      }
+    } catch (err) {
+      ui.setButtonLoading(btnSkip, false);
       ui.showToast(err.message, 'error');
     }
   }

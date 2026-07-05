@@ -15,6 +15,14 @@
   
   <!-- CSS Style -->
   <link rel="stylesheet" href="/css/style.css">
+  
+  <!-- Theme Initialization (Prevents light-theme flash) -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('syncra_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 <body>
 
@@ -426,6 +434,11 @@
                   </div>
                 </div>
               </div>
+              
+              <button class="btn-header-action" id="btn-theme-toggle" aria-label="Toggle Theme" data-tooltip="Toggle Dark Mode">
+                <i data-lucide="sun" class="theme-icon-light" style="display: none;"></i>
+                <i data-lucide="moon" class="theme-icon-dark"></i>
+              </button>
               
               <button class="btn-header-action" aria-label="History">
                 <i data-lucide="history"></i>
@@ -1008,6 +1021,17 @@
                               <option value="es">Español (Spanish)</option>
                               <option value="de">Deutsch (German)</option>
                               <option value="ja">日本語 (Japanese)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="input-group">
+                          <label for="settings-theme">Theme Mode</label>
+                          <div class="input-wrapper">
+                            <i data-lucide="palette"></i>
+                            <select id="settings-theme" required>
+                              <option value="light">Light/Default Mode</option>
+                              <option value="dark">Dark Mode</option>
                             </select>
                           </div>
                         </div>
@@ -1606,12 +1630,113 @@
       </div>
 
       <div class="onboarding-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
-        <button type="button" id="btn-onboarding-prev" class="btn btn-secondary" style="height: 40px; padding: 0 16px;" disabled>
-          <i data-lucide="arrow-left"></i>
-          <span>Back</span>
-        </button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btn-onboarding-prev" class="btn btn-secondary" style="height: 40px; padding: 0 16px;" disabled>
+            <i data-lucide="arrow-left"></i>
+            <span>Back</span>
+          </button>
+          <button type="button" id="btn-onboarding-skip" class="btn btn-secondary" style="height: 40px; padding: 0 16px; background: transparent; border-color: transparent; color: var(--text-muted);">
+            <span>Skip for now</span>
+          </button>
+        </div>
         <button type="button" id="btn-onboarding-next" class="btn btn-primary" style="height: 40px; padding: 0 16px;">
           <span>Next</span>
+          <i data-lucide="arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRE-FLIGHT GREEN ROOM MODAL -->
+  <div id="green-room-modal" class="modal-overlay">
+    <div class="glass-card modal-card green-room-card" style="max-width: 680px; width: 95%; padding: 28px;">
+      <div class="modal-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="video" style="width: 22px; height: 22px; color: var(--primary);"></i>
+          <span>Pre-Call Setup</span>
+        </h3>
+        <button type="button" class="btn-close" id="btn-green-room-close" aria-label="Close pre-flight check"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="green-room-grid">
+        <!-- Left: Device Selection & Video Preview -->
+        <div class="green-room-left" style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="green-room-preview-container" style="position: relative; width: 100%; height: 200px; border-radius: 12px; overflow: hidden; background: var(--bg-secondary); border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center;">
+            <video id="green-room-video-preview" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none;"></video>
+            <div class="green-room-video-placeholder" id="green-room-video-placeholder" style="display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--text-muted);">
+              <i data-lucide="video-off" style="width: 40px; height: 40px;"></i>
+              <span style="font-size: 0.85rem; font-weight: 500;">Camera is loading or blocked</span>
+            </div>
+            
+            <!-- Floating Mic Indicator Bar -->
+            <div class="green-room-mic-indicator" style="position: absolute; bottom: 12px; left: 12px; right: 12px; height: 6px; background: rgba(0,0,0,0.25); border-radius: 3px; overflow: hidden; display: flex; align-items: center; z-index: 10;">
+              <div id="green-room-mic-level" style="width: 0%; height: 100%; background: var(--success); transition: width 0.08s ease;"></div>
+            </div>
+          </div>
+
+          <div class="devices-list-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="input-group" style="margin-bottom: 0;">
+              <label for="green-room-camera" style="font-size: 0.75rem;">Camera</label>
+              <div class="input-wrapper">
+                <i data-lucide="video"></i>
+                <select id="green-room-camera" style="font-size: 0.8rem; padding-right: 20px;">
+                  <option value="">Loading camera...</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="input-group" style="margin-bottom: 0;">
+              <label for="green-room-mic" style="font-size: 0.75rem;">Microphone</label>
+              <div class="input-wrapper">
+                <i data-lucide="mic"></i>
+                <select id="green-room-mic" style="font-size: 0.8rem; padding-right: 20px;">
+                  <option value="">Loading mic...</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Language Setup -->
+        <div class="green-room-right" style="display: flex; flex-direction: column; gap: 16px; justify-content: center;">
+          <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px;">
+            Verify your speech translation direction before entering the meeting. You can adjust this during the call if needed.
+          </p>
+
+          <div class="input-group" style="margin-bottom: 12px;">
+            <label for="green-room-speak-lang">Spoken Language</label>
+            <div class="input-wrapper">
+              <i data-lucide="volume-2"></i>
+              <select id="green-room-speak-lang">
+                <option value="en">English</option>
+                <option value="fr">Français (French)</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="ja">日本語 (Japanese)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="input-group" style="margin-bottom: 0;">
+            <label for="green-room-translate-lang">Translation Target</label>
+            <div class="input-wrapper">
+              <i data-lucide="arrow-right-left"></i>
+              <select id="green-room-translate-lang">
+                <option value="en">English</option>
+                <option value="fr">Français (French)</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="ja">日本語 (Japanese)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="green-room-footer" style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+        <button type="button" id="btn-green-room-cancel" class="btn btn-secondary" style="height: 44px;">Cancel</button>
+        <button type="button" id="btn-green-room-join" class="btn btn-primary" style="height: 44px; padding: 0 24px;">
+          <span>Join Meeting</span>
           <i data-lucide="arrow-right"></i>
         </button>
       </div>
