@@ -586,7 +586,10 @@ socket.on('meeting-ended', () => {
 });
 
 socket.on('user-left', (peerId) => {
-  ui.showToast('Participant left the call.', 'info');
+  const callScreen = document.getElementById('call-screen');
+  if (callScreen && callScreen.classList.contains('active') && activeRoomId) {
+    ui.showToast('Participant left the call.', 'info');
+  }
 });
 
   socket.on('interim-caption', ({ text, speakerName: name }) => {

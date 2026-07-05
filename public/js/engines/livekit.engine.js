@@ -143,18 +143,29 @@ export const LiveKitEngine = {
   ensureSdkLoaded() {
     if (window.LiveKitClient) return Promise.resolve();
     
-    return new Promise((resolve, reject) => {
-      console.log('[LiveKitEngine] Loading LiveKit Client SDK from CDN...');
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js';
-      script.async = true;
-      script.onload = () => {
-        console.log('[LiveKitEngine] LiveKit Client SDK loaded successfully.');
-        resolve();
-      };
-      script.onerror = () => reject(new Error('Failed to load LiveKit Client SDK'));
-      document.head.appendChild(script);
-    });
+    const loadScript = (src) => {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+        document.head.appendChild(script);
+      });
+    };
+
+    console.log('[LiveKitEngine] Loading LiveKit Client SDK...');
+    return loadScript('/js/livekit-client.umd.min.js')
+      .then(() => {
+        console.log('[LiveKitEngine] LiveKit Client SDK loaded successfully from local source.');
+      })
+      .catch((localErr) => {
+        console.warn('[LiveKitEngine] Failed to load local SDK, falling back to CDN...', localErr);
+        return loadScript('https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js')
+          .then(() => {
+            console.log('[LiveKitEngine] LiveKit Client SDK loaded successfully from CDN.');
+          });
+      });
   },
 
   createOrUpdateRemoteVideo(participant, track) {

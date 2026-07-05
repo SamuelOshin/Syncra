@@ -23,6 +23,7 @@ export default (io: Server, socket: Socket): void => {
 
     // Store username in socket session data
     socket.data.username = username;
+    socket.data.roomId = roomId;
     
     // Get list of existing peers in the room before joining
     const clients = io.sockets.adapter.rooms.get(roomId);
