@@ -158,6 +158,7 @@ export const chat = {
       layout?.classList.remove('show-chat-window');
       this.activeChatId = null;
       this.renderChatList();
+      window.location.hash = 'chat';
     });
 
     // Video Call button click (planned placeholder)
@@ -291,7 +292,7 @@ export const chat = {
     listContainer.querySelectorAll('.chat-item').forEach(el => {
       el.addEventListener('click', () => {
         const chatId = el.getAttribute('data-chat-id');
-        this.selectChat(chatId);
+        window.location.hash = 'chat/' + chatId;
       });
     });
   },
@@ -739,7 +740,7 @@ export const chat = {
       
       // Refresh chats and select the newly created one
       await this.refreshChats();
-      this.selectChat(res.data.chat.id);
+      window.location.hash = 'chat/' + res.data.chat.id;
     } catch (err) {
       ui.showToast(err.message || 'Failed to create conversation', 'error');
     } finally {

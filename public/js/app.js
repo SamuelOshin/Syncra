@@ -81,6 +81,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   calendar.init();
   initSidebarNavigation();
 
+  // Listen for hash changes to trigger SPA routing
+  window.addEventListener('hashchange', () => {
+    navigateToHash(window.location.hash);
+  });
+
   // Initialize Sidebar Collapse State
   const sidebar = document.querySelector('.sidebar');
   const toggleBtn = document.getElementById('btn-sidebar-toggle');
@@ -192,7 +197,7 @@ async function checkSessionAndRoute() {
         } else {
           dashboard.init(currentUser, joinRoom);
           window.syncraJoinRoom = (roomId) => joinRoom(roomId, currentUser.name, currentUser.preferredLanguage || 'en');
-          await dashboard.refresh();
+          await navigateToHash(window.location.hash || '#dashboard');
         }
       });
       onboarding.show();
@@ -206,7 +211,7 @@ async function checkSessionAndRoute() {
       showScreen(dashboardScreen);
       dashboard.init(currentUser, joinRoom);
       window.syncraJoinRoom = (roomId) => joinRoom(roomId, currentUser.name, currentUser.preferredLanguage || 'en');
-      await dashboard.refresh();
+      await navigateToHash(window.location.hash || '#dashboard');
     }
   } catch (err) {
     // Check if this is a network connectivity issue rather than a 401 Unauthenticated
@@ -775,23 +780,94 @@ function handleExportClick() {
   ui.exportTranscriptFile(title, liveTranscripts);
 }
 
-function initSidebarNavigation() {
+async function navigateToHash(hash) {
   const menuItems = document.querySelectorAll('.sidebar-menu .menu-item, #btn-sidebar-settings');
   const contentViews = document.querySelectorAll('.content-view');
 
+  // Strip leading '#' and split to get sub-route parts (e.g. 'chat/123' -> ['chat', '123'])
+  const hashVal = (hash || '#dashboard').toLowerCase();
+  const routeParts = hashVal.replace('#', '').split('/');
+  const tabName = routeParts[0] || 'dashboard';
+  const subParam = routeParts[1] || null;
+
+  // Close mobile sheet if open
+  const mobileSheet = document.getElementById('mobile-nav-sheet');
+  if (mobileSheet && mobileSheet.classList.contains('active')) {
+    mobileSheet.classList.remove('active');
+  }
+
+  // Stop camera preview if navigating AWAY from settings
+  if (tabName !== 'settings' && window.syncraStopCameraPreview) {
+    window.syncraStopCameraPreview();
+  }
+
+  let buttonId = 'btn-sidebar-dashboard';
+  let targetViewId = 'view-dashboard';
+
+  if (tabName === 'calendar') { buttonId = 'btn-sidebar-calendar'; targetViewId = 'view-calendar'; }
+  else if (tabName === 'projects') { buttonId = 'btn-sidebar-projects'; targetViewId = 'view-projects'; }
+  else if (tabName === 'tm') { buttonId = 'btn-sidebar-tm'; targetViewId = 'view-tm'; }
+  else if (tabName === 'glossary') { buttonId = 'btn-sidebar-glossary'; targetViewId = 'view-glossary'; }
+  else if (tabName === 'analytics') { buttonId = 'btn-sidebar-analytics'; targetViewId = 'view-analytics'; }
+  else if (tabName === 'chat') { buttonId = 'btn-sidebar-chat'; targetViewId = 'view-chat'; }
+  else if (tabName === 'settings') { buttonId = 'btn-sidebar-settings'; targetViewId = 'view-settings'; }
+
+  // Update active sidebar item
+  menuItems.forEach(mi => {
+    if (mi.id === buttonId) {
+      mi.classList.add('active');
+    } else {
+      mi.classList.remove('active');
+    }
+  });
+
+  // Switch active view
+  contentViews.forEach(view => {
+    if (view.id === targetViewId) {
+      view.classList.add('active');
+    } else {
+      view.classList.remove('active');
+    }
+  });
+
+  // Fetch fresh data dynamically when switching tabs
+  try {
+    if (targetViewId === 'view-dashboard') {
+      await dashboard.refresh();
+    } else if (targetViewId === 'view-calendar') {
+      await calendar.loadAndRender();
+    } else if (targetViewId === 'view-projects') {
+      await projects.loadAndRender();
+    } else if (targetViewId === 'view-tm') {
+      await tm.loadAndRender();
+    } else if (targetViewId === 'view-glossary') {
+      await glossary.loadTerms();
+    } else if (targetViewId === 'view-analytics') {
+      await analytics.loadAndRender();
+    } else if (targetViewId === 'view-chat') {
+      await chat.refreshChats();
+      if (subParam) {
+        await chat.selectChat(subParam);
+      }
+    } else if (targetViewId === 'view-settings') {
+      await settings.show();
+    }
+  } catch (err) {
+    console.error('[Navigation] Error loading view data:', err);
+  }
+}
+
+function initSidebarNavigation() {
+  const menuItems = document.querySelectorAll('.sidebar-menu .menu-item, #btn-sidebar-settings');
+
   menuItems.forEach(item => {
-    item.addEventListener('click', async (e) => {
+    item.addEventListener('click', (e) => {
       e.preventDefault();
 
       // Close mobile sheet if open
       const mobileSheet = document.getElementById('mobile-nav-sheet');
       if (mobileSheet && mobileSheet.classList.contains('active')) {
         mobileSheet.classList.remove('active');
-      }
-
-      // Stop camera preview if navigating AWAY from settings
-      if (window.syncraStopCameraPreview) {
-        window.syncraStopCameraPreview();
       }
 
       const id = item.id;
@@ -802,50 +878,17 @@ function initSidebarNavigation() {
         return;
       }
 
-      let targetViewId = 'view-dashboard';
+      let targetHash = 'dashboard';
 
-      if (id === 'btn-sidebar-calendar') targetViewId = 'view-calendar';
-      else if (id === 'btn-sidebar-projects') targetViewId = 'view-projects';
-      else if (id === 'btn-sidebar-tm') targetViewId = 'view-tm';
-      else if (id === 'btn-sidebar-glossary') targetViewId = 'view-glossary';
-      else if (id === 'btn-sidebar-analytics') targetViewId = 'view-analytics';
-      else if (id === 'btn-sidebar-chat') targetViewId = 'view-chat';
-      else if (id === 'btn-sidebar-settings') targetViewId = 'view-settings';
+      if (id === 'btn-sidebar-calendar') targetHash = 'calendar';
+      else if (id === 'btn-sidebar-projects') targetHash = 'projects';
+      else if (id === 'btn-sidebar-tm') targetHash = 'tm';
+      else if (id === 'btn-sidebar-glossary') targetHash = 'glossary';
+      else if (id === 'btn-sidebar-analytics') targetHash = 'analytics';
+      else if (id === 'btn-sidebar-chat') targetHash = 'chat';
+      else if (id === 'btn-sidebar-settings') targetHash = 'settings';
 
-      // Update active sidebar item
-      menuItems.forEach(mi => mi.classList.remove('active'));
-      item.classList.add('active');
-
-      // Switch active view
-      contentViews.forEach(view => {
-        view.classList.remove('active');
-        if (view.id === targetViewId) {
-          view.classList.add('active');
-        }
-      });
-
-      // Fetch fresh data dynamically when switching tabs
-      try {
-        if (targetViewId === 'view-dashboard') {
-          await dashboard.refresh();
-        } else if (targetViewId === 'view-calendar') {
-          await calendar.loadAndRender();
-        } else if (targetViewId === 'view-projects') {
-          await projects.loadAndRender();
-        } else if (targetViewId === 'view-tm') {
-          await tm.loadAndRender();
-        } else if (targetViewId === 'view-glossary') {
-          await glossary.loadTerms();
-        } else if (targetViewId === 'view-analytics') {
-          await analytics.loadAndRender();
-        } else if (targetViewId === 'view-chat') {
-          await chat.refreshChats();
-        } else if (targetViewId === 'view-settings') {
-          await settings.show();
-        }
-      } catch (err) {
-        console.error('[Navigation] Error loading view data:', err);
-      }
+      window.location.hash = targetHash;
     });
   });
 
