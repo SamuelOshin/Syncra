@@ -618,6 +618,21 @@ body, html {
   }
 }
 
+/* Errored Input States */
+input.error,
+select.error,
+textarea.error {
+  border-color: #EF4444 !important;
+  background-color: rgba(239, 68, 68, 0.02) !important;
+}
+
+input.error:focus,
+select.error:focus,
+textarea.error:focus {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;
@@ -5517,6 +5532,369 @@ body, html {
   margin: 0 !important;
   display: flex !important;
   flex-grow: 1 !important;
+}
+
+/* ==========================================================================
+   9. WEB PUSH NOTIFICATIONS SETTINGS PANEL STYLING
+   ========================================================================== */
+.settings-notification-card {
+  background: var(--card-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.notification-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.notification-card-title-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notification-card-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--primary, #3B82F6);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notification-card-title-group h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--text-main, #1F2937);
+}
+
+.notification-card-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted, #6B7280);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.push-status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.push-status-badge.muted {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--text-muted, #6B7280);
+}
+
+.push-status-badge.success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10B981;
+}
+
+.push-status-badge.warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #F59E0B;
+}
+
+.push-status-badge.danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+}
+
+.push-toggle-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color, rgba(0, 0, 0, 0.05));
+}
+
+.push-toggle-group span {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-main, #1F2937);
+}
+
+/* Switch styling */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--neutral-300, #CBD5E1);
+  transition: .3s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+input:checked + .slider {
+  background-color: var(--primary, #3B82F6);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--primary, #3B82F6);
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+.slider.round {
+  border-radius: 24px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.push-details-group {
+  padding-top: 16px;
+  border-top: 1px dashed var(--border-color, rgba(0, 0, 0, 0.05));
+  animation: slideDownFadeIn 0.3s ease-out;
+}
+
+@keyframes slideDownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.push-action-row {
+  display: flex;
+  gap: 12px;
+}
+
+.push-info-box {
+  background: var(--info-bg, rgba(59, 130, 246, 0.05));
+  border: 1px solid var(--info-border, rgba(59, 130, 246, 0.15));
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+}
+
+.push-info-box .info-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--primary, #3B82F6);
+  flex-shrink: 0;
+}
+
+.push-info-box .info-content h6 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--text-main, #1F2937);
+}
+
+.push-info-box .info-content ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.85rem;
+  color: var(--text-muted, #6B7280);
+  line-height: 1.6;
+}
+
+.push-info-box .info-content li {
+  margin-bottom: 8px;
+}
+
+.push-info-box .info-content li:last-child {
+  margin-bottom: 0;
+}
+
+/* Push Onboarding Banner */
+.push-onboarding-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 24px;
+  margin-bottom: 24px;
+  background: var(--card-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  box-shadow: var(--shadow-elevation-low);
+  animation: slideDownFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.push-onboarding-banner.active {
+  display: flex !important;
+}
+
+.push-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.push-banner-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--primary, #3B82F6);
+  flex-shrink: 0;
+}
+
+.push-banner-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.push-banner-text h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 2px 0;
+  color: var(--text-main, #1F2937);
+}
+
+.push-banner-text p {
+  font-size: 0.85rem;
+  color: var(--text-muted, #6B7280);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.push-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.btn-push-banner-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #6B7280);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-push-banner-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #1F2937);
+}
+
+/* Pulsing icon animation */
+.pulsing-icon {
+  animation: bellPulse 2s infinite;
+}
+
+@keyframes bellPulse {
+  0% {
+    transform: rotate(0);
+  }
+  10% {
+    transform: rotate(15deg);
+  }
+  20% {
+    transform: rotate(-15deg);
+  }
+  30% {
+    transform: rotate(10deg);
+  }
+  40% {
+    transform: rotate(-10deg);
+  }
+  50% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+
+/* Mobile responsive for push banner */
+@media (max-width: 768px) {
+  .push-onboarding-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 16px;
+  }
+  
+  .push-banner-actions {
+    justify-content: flex-end;
+  }
+}
+
+/* Copy Room Link Button */
+.btn-copy-room-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  background: var(--card-bg, rgba(255, 255, 255, 0.05));
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.btn-copy-room-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-main);
+  border-color: var(--border-color, rgba(255, 255, 255, 0.25));
+}
+
+.btn-copy-room-link svg {
+  width: 14px;
+  height: 14px;
 }
 
 

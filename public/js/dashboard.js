@@ -149,6 +149,9 @@ export const dashboard = {
     // Store auth context so refresh() can use it without extra args
     _currentUser = currentUser;
     _onJoinRoom = onJoinRoom;
+
+    // Initialize Push Notification Banner
+    this.initPushBanner();
   },
  
   async refresh() {
@@ -462,6 +465,70 @@ Translation (${t.targetLang.toUpperCase()}): ${t.translatedText}
         </div>
       `;
     }).join('');
+  },
+
+  initPushBanner() {
+    const banner = document.getElementById('push-onboarding-banner');
+    const btnEnable = document.getElementById('btn-push-banner-enable');
+    const btnClose = document.getElementById('btn-push-banner-close');
+
+    if (!banner) return;
+
+    // Check if browser supports push notifications
+    const isSupported = 'serviceWorker' in navigator && 'PushManager' in window;
+    if (!isSupported) {
+      banner.style.display = 'none';
+      return;
+    }
+
+    // Check if user has already allowed, blocked, or dismissed the banner
+    const isPermissionDefault = Notification.permission === 'default';
+    const isDismissed = localStorage.getItem('syncra_dismissed_push_banner') === 'true';
+
+    if (isPermissionDefault && !isDismissed) {
+      banner.style.display = 'flex';
+      banner.classList.add('active');
+    } else {
+      banner.style.display = 'none';
+    }
+
+    // Bind Enable Button
+    if (btnEnable) {
+      btnEnable.addEventListener('click', async () => {
+        try {
+          btnEnable.disabled = true;
+          // Trigger settings push toggle logic
+          const { settings } = await import('./settings.js');
+          
+          if (!settings.swRegistration) {
+            await settings.registerServiceWorker();
+          }
+          
+          await settings.handlePushToggle(true);
+          
+          // Hide banner
+          banner.classList.remove('active');
+          setTimeout(() => {
+            banner.style.display = 'none';
+          }, 300);
+        } catch (err) {
+          console.error('[WebPush] Banner subscribe failed:', err);
+        } finally {
+          btnEnable.disabled = false;
+        }
+      });
+    }
+
+    // Bind Close Button
+    if (btnClose) {
+      btnClose.addEventListener('click', () => {
+        localStorage.setItem('syncra_dismissed_push_banner', 'true');
+        banner.classList.remove('active');
+        setTimeout(() => {
+          banner.style.display = 'none';
+        }, 300);
+      });
+    }
   }
 };
 export default dashboard;

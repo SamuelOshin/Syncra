@@ -29,6 +29,18 @@ class Config {
   public readonly resendApiKey: string;
   public readonly emailFrom: string;
 
+  get vapidPublicKey(): string {
+    return process.env.VAPID_PUBLIC_KEY || '';
+  }
+
+  get vapidPrivateKey(): string {
+    return process.env.VAPID_PRIVATE_KEY || '';
+  }
+
+  get vapidSubject(): string {
+    return process.env.VAPID_SUBJECT || 'mailto:support@syncra.app';
+  }
+
   constructor() {
     this.requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION === 'true';
     this.resendApiKey = process.env.RESEND_API_KEY || '';

@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { GlossaryRepository } from './glossary.repository';
 import { successResponse } from '../../utils/response';
 import { NotFoundError, ForbiddenError } from '../../utils/errors';
-import { NotificationRepository } from '../notifications/notification.repository';
+import { notificationService } from '../notifications/notification.service';
 import { buildPaginationMeta, parsePagination } from '../../utils/pagination';
 
 const glossaryRepository = new GlossaryRepository();
@@ -40,8 +40,7 @@ export class GlossaryController {
         projectId: projectId || null,
       });
 
-      const notificationRepository = new NotificationRepository();
-      await notificationRepository.create({
+      await notificationService.createNotification({
         id: randomUUID(),
         userId,
         title: 'Glossary Term Added',

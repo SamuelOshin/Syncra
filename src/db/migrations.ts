@@ -159,6 +159,17 @@ export async function initializeDatabase() {
         );
       `);
 
+      await dbClient.execute(sql`
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+          id VARCHAR(36) PRIMARY KEY,
+          user_id VARCHAR(36) NOT NULL,
+          endpoint TEXT NOT NULL,
+          p256dh VARCHAR(255) NOT NULL,
+          auth VARCHAR(255) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+        );
+      `);
+
       // Table for connect-pg-simple session store (safe, self-contained creation)
       await dbClient.execute(sql`
         CREATE TABLE IF NOT EXISTS "session" (
@@ -180,6 +191,8 @@ export async function initializeDatabase() {
       await dbClient.execute(sql`CREATE INDEX IF NOT EXISTS idx_chat_participants_user ON chat_participants (user_id);`);
       await dbClient.execute(sql`CREATE INDEX IF NOT EXISTS idx_chat_messages_chat_created ON chat_messages (chat_id, created_at);`);
       await dbClient.execute(sql`CREATE INDEX IF NOT EXISTS idx_message_translations_msg ON message_translations (message_id);`);
+      await dbClient.execute(sql`CREATE INDEX IF NOT EXISTS idx_push_subs_user ON push_subscriptions (user_id);`);
+
 
       console.log('[Database] PostgreSQL migrations applied successfully.');
     } else {
@@ -312,6 +325,15 @@ export async function initializeDatabase() {
           translated_text TEXT NOT NULL,
           created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          endpoint TEXT NOT NULL,
+          p256dh TEXT NOT NULL,
+          auth TEXT NOT NULL,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+        );
       `);
 
       try { 
@@ -331,6 +353,7 @@ export async function initializeDatabase() {
         CREATE INDEX IF NOT EXISTS idx_chat_participants_user ON chat_participants (user_id);
         CREATE INDEX IF NOT EXISTS idx_chat_messages_chat_created ON chat_messages (chat_id, created_at);
         CREATE INDEX IF NOT EXISTS idx_message_translations_msg ON message_translations (message_id);
+        CREATE INDEX IF NOT EXISTS idx_push_subs_user ON push_subscriptions (user_id);
       `);
 
       console.log('[Database] SQLite migrations applied successfully.');

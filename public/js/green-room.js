@@ -87,7 +87,10 @@ export const greenRoom = {
 
     try {
       // Trigger media permissions first
-      await navigator.mediaDevices.getUserMedia({ audio: true, video: true }).catch(() => {});
+      const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true }).catch(() => null);
+      if (tempStream) {
+        tempStream.getTracks().forEach(track => track.stop());
+      }
 
       const devices = await navigator.mediaDevices.enumerateDevices();
       const cameras = devices.filter(d => d.kind === 'videoinput');

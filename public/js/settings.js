@@ -8,8 +8,37 @@ import { webrtc } from './webrtc.js';
 
 export const settings = {
   previewStream: null,
+  swRegistration: null,
 
   init() {
+    // Register Service Worker
+    this.registerServiceWorker();
+
+    // Push Notification Toggle Handler
+    const pushToggle = document.getElementById('settings-push-enabled');
+    if (pushToggle) {
+      pushToggle.addEventListener('change', async () => {
+        await this.handlePushToggle(pushToggle.checked);
+      });
+    }
+
+    // Send Test Push Button Handler
+    const btnTestPush = document.getElementById('btn-test-push');
+    if (btnTestPush) {
+      btnTestPush.addEventListener('click', async () => {
+        try {
+          btnTestPush.disabled = true;
+          await api.testPushNotification();
+          ui.showToast('Test push notification sent!', 'success');
+        } catch (err) {
+          console.error('[WebPush] Error sending test push:', err);
+          ui.showToast('Failed to send test push notification', 'error');
+        } finally {
+          btnTestPush.disabled = false;
+        }
+      });
+    }
+
     // 1. Tab Navigation Logic
     const tabButtons = document.querySelectorAll('.settings-tab-btn');
     const panes = document.querySelectorAll('.settings-pane');
@@ -38,7 +67,9 @@ export const settings = {
 
         // Start camera preview if entering the Devices tab
         if (targetId === 'settings-pane-devices') {
-          this.startCameraPreview();
+          this.loadDevices().then(() => {
+            this.startCameraPreview();
+          });
         }
       });
     });
@@ -152,7 +183,7 @@ export const settings = {
 
       // 2. Load saved preferences
       this.loadSavedPreferences();
-      this.loadDevices();
+      this.checkPushSubscription();
 
       // Ensure Profile tab is active when entering settings
       const firstTab = document.querySelector('.settings-tab-btn[data-target="settings-pane-profile"]');
@@ -214,14 +245,18 @@ export const settings = {
 
     try {
       // Prompt for temporary permission to enumerate devices
-      await navigator.mediaDevices.getUserMedia({ 
+      const tempStream = await navigator.mediaDevices.getUserMedia({ 
         audio: { 
           echoCancellation: true, 
           noiseSuppression: true, 
           autoGainControl: true 
         }, 
         video: true 
-      }).catch(() => {});
+      }).catch(() => null);
+
+      if (tempStream) {
+        tempStream.getTracks().forEach(track => track.stop());
+      }
       
       const devices = await navigator.mediaDevices.enumerateDevices();
       
@@ -512,6 +547,169 @@ export const settings = {
       const span = placeholder.querySelector('span');
       if (span) span.textContent = 'Webcam preview is currently inactive';
     }
+  },
+
+  async registerServiceWorker() {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      try {
+        const registration = await navigator.serviceWorker.register('/sw.js');
+        this.swRegistration = registration;
+        console.log('[ServiceWorker] Registered successfully with scope:', registration.scope);
+        
+        // Re-check subscription UI now that it's registered
+        this.checkPushSubscription();
+      } catch (err) {
+        console.error('[ServiceWorker] Registration failed:', err);
+      }
+    } else {
+      console.warn('[WebPush] Service Workers or Push notifications are not supported in this browser.');
+    }
+  },
+
+  async checkPushSubscription() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      this.updatePushUI('unsupported');
+      return null;
+    }
+
+    // If registration is not cached yet, try to wait for active/ready service worker
+    if (!this.swRegistration) {
+      try {
+        const readyRegistration = await navigator.serviceWorker.ready;
+        if (readyRegistration) {
+          this.swRegistration = readyRegistration;
+        } else {
+          const reg = await navigator.serviceWorker.getRegistration('/');
+          if (reg) this.swRegistration = reg;
+        }
+      } catch (e) {
+        console.warn('[WebPush] Failed to resolve ready service worker:', e);
+      }
+    }
+
+    if (!this.swRegistration) {
+      this.updatePushUI('unsupported');
+      return null;
+    }
+
+    try {
+      const subscription = await this.swRegistration.pushManager.getSubscription();
+      if (subscription) {
+        this.updatePushUI('subscribed');
+        return subscription;
+      } else {
+        this.updatePushUI('unsubscribed');
+        return null;
+      }
+    } catch (err) {
+      console.error('[WebPush] Error checking subscription:', err);
+      this.updatePushUI('error');
+      return null;
+    }
+  },
+
+  updatePushUI(state) {
+    const badge = document.getElementById('push-status-badge');
+    const checkbox = document.getElementById('settings-push-enabled');
+    const details = document.getElementById('push-details-group');
+
+    if (!badge || !checkbox) return;
+
+    checkbox.disabled = false;
+
+    if (state === 'subscribed') {
+      badge.textContent = 'Subscribed';
+      badge.className = 'push-status-badge success';
+      checkbox.checked = true;
+      if (details) details.style.display = 'block';
+    } else if (state === 'unsubscribed') {
+      badge.textContent = 'Not Active';
+      badge.className = 'push-status-badge muted';
+      checkbox.checked = false;
+      if (details) details.style.display = 'none';
+    } else if (state === 'subscribing...') {
+      badge.textContent = 'Subscribing...';
+      badge.className = 'push-status-badge warning';
+      checkbox.disabled = true;
+    } else if (state === 'unsubscribing...') {
+      badge.textContent = 'Unsubscribing...';
+      badge.className = 'push-status-badge warning';
+      checkbox.disabled = true;
+    } else if (state === 'unsupported') {
+      badge.textContent = 'Unsupported';
+      badge.className = 'push-status-badge danger';
+      checkbox.checked = false;
+      checkbox.disabled = true;
+      if (details) details.style.display = 'none';
+    } else if (state === 'error') {
+      badge.textContent = 'Blocked/Error';
+      badge.className = 'push-status-badge danger';
+      checkbox.checked = false;
+      if (details) details.style.display = 'none';
+    }
+  },
+
+  async handlePushToggle(enabled) {
+    if (!this.swRegistration) return;
+
+    this.updatePushUI(enabled ? 'subscribing...' : 'unsubscribing...');
+
+    try {
+      if (enabled) {
+        // 1. Fetch VAPID public key
+        const res = await api.getVapidKey();
+        const publicKey = res.data.publicKey;
+        if (!publicKey) {
+          throw new Error('VAPID public key not found on server');
+        }
+        
+        // 2. Request permission and subscribe
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          throw new Error('Notification permission denied');
+        }
+
+        const convertedVapidKey = this.urlBase64ToUint8Array(publicKey);
+
+        const subscription = await this.swRegistration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedVapidKey
+        });
+
+        // 3. Post to backend
+        const subJSON = subscription.toJSON();
+        await api.subscribePush(subJSON);
+
+        ui.showToast('Push notifications enabled successfully!', 'success');
+        this.updatePushUI('subscribed');
+      } else {
+        const subscription = await this.swRegistration.pushManager.getSubscription();
+        if (subscription) {
+          await api.unsubscribePush(subscription.endpoint);
+          await subscription.unsubscribe();
+        }
+
+        ui.showToast('Push notifications disabled.', 'success');
+        this.updatePushUI('unsubscribed');
+      }
+    } catch (err) {
+      console.error('[WebPush] Toggle push failed:', err);
+      ui.showToast(err.message || 'Failed to update push subscription settings', 'error');
+      await this.checkPushSubscription();
+    }
+  },
+
+  urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
   }
 };
 export default settings;

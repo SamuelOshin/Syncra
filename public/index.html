@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Syncra - Enterprise Real-Time Translation</title>
   
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -492,6 +495,28 @@
                 <h2>Welcome back, <span id="welcome-name">User</span></h2>
                 <p>Here's your translation workspace overview for today.</p>
               </div>
+
+              <!-- Push Notification Onboarding Banner -->
+              <div id="push-onboarding-banner" class="glass-card push-onboarding-banner" style="display: none;">
+                <div class="push-banner-content">
+                  <div class="push-banner-icon-wrapper">
+                    <i data-lucide="bell-ring" class="push-banner-icon pulsing-icon"></i>
+                  </div>
+                  <div class="push-banner-text">
+                    <h4>Stay Connected!</h4>
+                    <p>Enable native push notifications to receive real-time alerts for scheduled meetings and translations.</p>
+                  </div>
+                </div>
+                <div class="push-banner-actions">
+                  <button class="btn btn-primary btn-sm" id="btn-push-banner-enable">
+                    <i data-lucide="bell"></i>
+                    <span>Enable Notifications</span>
+                  </button>
+                  <button class="btn-icon-secondary btn-push-banner-close" id="btn-push-banner-close" title="Dismiss">
+                    <i data-lucide="x"></i>
+                  </button>
+                </div>
+              </div>
               
               <!-- Asymmetric Grid -->
               <div class="dashboard-grid">
@@ -919,6 +944,10 @@
                       <i data-lucide="lock"></i>
                       <span>Security</span>
                     </button>
+                    <button class="settings-tab-btn" data-target="settings-pane-notifications">
+                      <i data-lucide="bell"></i>
+                      <span>Push Notifications</span>
+                    </button>
                   </div>
 
                   <!-- Right Side: Panes -->
@@ -1160,6 +1189,57 @@
                       </div>
                     </div>
 
+                    <!-- Pane 5: Push Notifications -->
+                    <div class="settings-pane" id="settings-pane-notifications">
+                      <div class="pane-header">
+                        <h4>Push Notifications</h4>
+                        <p class="subtitle">Receive native alerts on your desktop or phone even when Syncra is closed</p>
+                      </div>
+
+                      <div class="settings-notification-card">
+                        <div class="notification-card-header">
+                          <div class="notification-card-title-group">
+                            <i data-lucide="bell-ring" class="notification-card-icon"></i>
+                            <div>
+                              <h5>System Push Notifications</h5>
+                              <p class="notification-card-desc">Deliver instant notifications using your browser's native capabilities.</p>
+                            </div>
+                          </div>
+                          <div class="push-status-badge" id="push-status-badge">Checking...</div>
+                        </div>
+
+                        <div class="notification-card-body">
+                          <div class="push-toggle-group">
+                            <span>Enable Native Push Notifications</span>
+                            <label class="switch">
+                              <input type="checkbox" id="settings-push-enabled">
+                              <span class="slider round"></span>
+                            </label>
+                          </div>
+
+                          <div class="push-details-group" id="push-details-group" style="display: none;">
+                            <div class="push-action-row">
+                              <button type="button" class="btn btn-secondary" id="btn-test-push">
+                                <i data-lucide="send"></i>
+                                <span>Send Test Notification</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="push-info-box">
+                        <i data-lucide="info" class="info-icon"></i>
+                        <div class="info-content">
+                          <h6>How it works:</h6>
+                          <ul>
+                            <li><strong>Desktops & Android:</strong> Toggling this on registers this browser directly with no downloads needed.</li>
+                            <li><strong>iOS (iPhone/iPad):</strong> Requires iOS 16.4+. First, tap the Share button in Safari, select <strong>"Add to Home Screen"</strong>, then launch the app from your home screen to enable push notifications.</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
 
                 </div>
@@ -1191,6 +1271,9 @@
         <div class="room-info">
           <span class="status-dot connected"></span>
           <span id="room-title" class="room-name">#room</span>
+          <button id="btn-copy-meeting-link" class="btn-copy-room-link" title="Copy Meeting Link">
+            <i data-lucide="copy"></i>
+          </button>
         </div>
         <div class="translation-mode">
           <span id="user-lang-badge" class="badge">EN</span>
@@ -1255,6 +1338,9 @@
         </button>
         <button id="btn-export-transcript" class="ctrl-btn" aria-label="Export Transcript">
           <i data-lucide="download"></i>
+        </button>
+        <button id="btn-copy-meeting-link-footer" class="ctrl-btn" aria-label="Copy Meeting Link" title="Copy Meeting Link">
+          <i data-lucide="copy"></i>
         </button>
         <button id="btn-leave" class="ctrl-btn ctrl-btn-danger" aria-label="Leave Call">
           <i data-lucide="phone-off"></i>
