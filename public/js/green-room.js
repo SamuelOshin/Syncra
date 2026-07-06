@@ -144,8 +144,9 @@ export const greenRoom = {
       }
     } catch (err) {
       console.error('Error listing devices in Green Room precheck:', err);
-      cameraSelect.innerHTML = '<option value="">Permission denied</option>';
-      micSelect.innerHTML = '<option value="">Permission denied</option>';
+      const msg = (!navigator.mediaDevices) ? 'HTTPS Required' : 'Permission denied';
+      cameraSelect.innerHTML = `<option value="">${msg}</option>`;
+      micSelect.innerHTML = `<option value="">${msg}</option>`;
     }
   },
 
@@ -169,6 +170,9 @@ export const greenRoom = {
     if (hasCameraOptions && hasMicOptions && !cameraId && !micId) return;
 
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('MediaDevicesNotSupported: Secure context (HTTPS) is required.');
+      }
       const constraints = {
         video: cameraId ? { deviceId: { ideal: cameraId } } : (hasCameraOptions && !cameraId ? false : true),
         audio: micId ? { deviceId: { ideal: micId } } : (hasMicOptions && !micId ? false : true)

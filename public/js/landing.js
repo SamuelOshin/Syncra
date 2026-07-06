@@ -215,24 +215,11 @@ document.addEventListener('DOMContentLoaded', () => {
   
   if (mobileToggle && navLinks) {
     mobileToggle.addEventListener('click', () => {
-      const isVisible = navLinks.style.display === 'flex';
-      
-      if (isVisible) {
-        navLinks.style.display = 'none';
-        mobileToggle.innerHTML = '<i data-lucide="menu"></i>';
-      } else {
-        navLinks.style.display = 'flex';
-        navLinks.style.flexDirection = 'column';
-        navLinks.style.position = 'absolute';
-        navLinks.style.top = '74px';
-        navLinks.style.left = '0';
-        navLinks.style.width = '100%';
-        navLinks.style.backgroundColor = 'var(--bg-glass)';
-        navLinks.style.border = '1px solid var(--border-glass)';
-        navLinks.style.borderRadius = '16px';
-        navLinks.style.padding = '20px';
-        navLinks.style.gap = '16px';
+      const isOpen = navLinks.classList.toggle('active');
+      if (isOpen) {
         mobileToggle.innerHTML = '<i data-lucide="x"></i>';
+      } else {
+        mobileToggle.innerHTML = '<i data-lucide="menu"></i>';
       }
       if (window.lucide) window.lucide.createIcons();
     });
@@ -240,31 +227,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 5. DYNAMIC AUTH SESSION CHECK FOR CTAs
   async function checkAuthSession() {
-    const btnSignIn = document.querySelector('.btn-signin');
-    const btnLaunch = document.querySelector('.btn-primary-pill');
+    const signInButtons = document.querySelectorAll('.btn-signin');
+    const launchButtons = document.querySelectorAll('.btn-primary-pill');
     
-    if (!btnLaunch) return;
+    if (launchButtons.length === 0) return;
+
+    let isLoggedIn = false;
+
+    const updateButtons = () => {
+      const isMobile = window.innerWidth < 480;
+      
+      launchButtons.forEach(btnLaunch => {
+        const span = btnLaunch.querySelector('span');
+        if (!span) return;
+
+        if (isLoggedIn) {
+          span.textContent = isMobile ? 'Dashboard' : 'Go to Dashboard';
+          btnLaunch.setAttribute('href', '/app');
+        } else {
+          const hasChecked = btnLaunch.dataset.authChecked === 'true';
+          if (hasChecked) {
+            span.textContent = isMobile ? 'Start' : 'Get Started';
+          } else {
+            span.textContent = isMobile ? 'Launch' : 'Launch App';
+          }
+          btnLaunch.setAttribute('href', '/app#signup');
+        }
+      });
+      
+      signInButtons.forEach(btnSignIn => {
+        if (isLoggedIn) {
+          btnSignIn.style.display = 'none';
+        } else {
+          const isMobileMenu = btnSignIn.closest('.mobile-menu-cta') !== null;
+          btnSignIn.style.display = isMobileMenu ? 'flex' : 'inline-flex';
+        }
+      });
+    };
+
+    // Run initial update immediately
+    updateButtons();
+    window.addEventListener('resize', updateButtons);
 
     try {
       const response = await fetch('/api/auth/me');
-      if (response.ok) {
-        // Logged in: Hide "Sign In" and show "Go to Dashboard"
-        if (btnSignIn) btnSignIn.style.display = 'none';
-        const span = btnLaunch.querySelector('span');
-        if (span) span.textContent = 'Go to Dashboard';
-        btnLaunch.setAttribute('href', '/app');
-      } else {
-        // Not logged in: Show "Sign In" and make button read "Get Started"
-        if (btnSignIn) btnSignIn.style.display = 'inline-flex';
-        const span = btnLaunch.querySelector('span');
-        if (span) span.textContent = 'Get Started';
-        btnLaunch.setAttribute('href', '/app#signup');
-      }
+      isLoggedIn = response.ok;
+      launchButtons.forEach(btnLaunch => {
+        btnLaunch.dataset.authChecked = 'true';
+      });
+      updateButtons();
     } catch (err) {
-      if (btnSignIn) btnSignIn.style.display = 'inline-flex';
-      const span = btnLaunch.querySelector('span');
-      if (span) span.textContent = 'Get Started';
-      btnLaunch.setAttribute('href', '/app#signup');
+      launchButtons.forEach(btnLaunch => {
+        btnLaunch.dataset.authChecked = 'true';
+      });
+      updateButtons();
     }
   }
 

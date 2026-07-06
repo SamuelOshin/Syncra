@@ -39,8 +39,6 @@ lerna-debug.log*
 *.log
 
 # IDEs and editors
-.vscode/
-!.vscode/extensions.json
 .idea/
 *.suo
 *.ntvs*
@@ -56,3 +54,4 @@ Thumbs.db
 .eslintcache
 .stylelintcache
 .prettiercache
+.gitignore
