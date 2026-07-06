@@ -6,6 +6,9 @@ import { ui } from '../ui.js';
 
 function getUserMediaWithTimeout(constraints, timeoutMs = 4000) {
   return new Promise((resolve, reject) => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return reject(new Error('MediaDevicesNotSupported: navigator.mediaDevices.getUserMedia is not defined. Secure context (HTTPS) is required on mobile.'));
+    }
     let completed = false;
     const timeout = setTimeout(() => {
       if (!completed) {
@@ -77,11 +80,11 @@ export const P2PEngine = {
         autoGainControl: true
       };
       if (micDeviceId) {
-        audioConstraints.deviceId = { exact: micDeviceId };
+        audioConstraints.deviceId = { ideal: micDeviceId };
       }
 
       const constraints = {
-        video: cameraDeviceId ? { deviceId: { exact: cameraDeviceId } } : true,
+        video: cameraDeviceId ? { deviceId: { ideal: cameraDeviceId } } : true,
         audio: audioConstraints
       };
 

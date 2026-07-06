@@ -112,9 +112,9 @@ export const LiveKitEngine = {
       // Enable local tracks with saved constraints and fallbacks
       try {
         await this.room.localParticipant.enableCameraAndMicrophone({
-          video: cameraDeviceId ? { deviceId: { exact: cameraDeviceId } } : true,
+          video: cameraDeviceId ? { deviceId: { ideal: cameraDeviceId } } : true,
           audio: micDeviceId ? { 
-            deviceId: { exact: micDeviceId },
+            deviceId: { ideal: micDeviceId },
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true
@@ -129,7 +129,7 @@ export const LiveKitEngine = {
         try {
           // Use the correct API for mic-only — do NOT call enableCameraAndMicrophone
           await this.room.localParticipant.setMicrophoneEnabled(true, micDeviceId ? {
-            deviceId: { exact: micDeviceId },
+            deviceId: { ideal: micDeviceId },
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true
@@ -176,7 +176,6 @@ export const LiveKitEngine = {
 
     } catch (err) {
       console.error('[LiveKitEngine] Error connecting to LiveKit room:', err);
-      ui.showToast('Failed to connect to media server', 'error');
       this.cleanup();
       throw err;
     }
