@@ -177,6 +177,7 @@ h1, h2, h3, h4 {
   font-size: 15px;
   font-weight: 600;
   transition: opacity 0.2s ease;
+  white-space: nowrap;
 }
 
 .btn-signin:hover {
@@ -198,6 +199,7 @@ h1, h2, h3, h4 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .btn-primary-pill:hover {
@@ -213,6 +215,10 @@ h1, h2, h3, h4 {
   border: none;
   color: var(--text-main);
   cursor: pointer;
+}
+
+.mobile-menu-cta {
+  display: none;
 }
 
 /* ==========================================================================
@@ -317,6 +323,7 @@ h1, h2, h3, h4 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .btn-outline-pill:hover {
@@ -1141,34 +1148,161 @@ h1, h2, h3, h4 {
 @media (max-width: 768px) {
   .header-nav {
     border-radius: 20px;
-    padding: 0 16px;
+    padding: 0 12px;
+    height: 56px;
+  }
+  
+  .nav-brand {
+    font-size: 16px;
+    gap: 6px;
+  }
+  
+  .nav-brand i {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
   }
   
   .nav-links {
-    display: none; /* Can be toggled in JS */
+    display: none;
+  }
+  
+  .nav-links.active {
+    display: flex !important;
+    flex-direction: column;
+    position: absolute;
+    top: 66px;
+    left: 0;
+    width: 100%;
+    background-color: var(--bg-main);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: 24px 20px;
+    gap: 16px;
+    box-shadow: var(--shadow-premium);
+    z-index: 1001;
+    align-items: center;
+  }
+  
+  .nav-links.active li {
+    width: 100%;
+    text-align: center;
+    list-style: none;
+  }
+  
+  .nav-links.active a {
+    display: block;
+    padding: 6px 0;
+    font-size: 16px;
+    color: var(--text-main);
+    text-decoration: none;
+  }
+  
+  .nav-ctas {
+    gap: 8px;
+  }
+  
+  .nav-ctas .btn-primary-pill,
+  .nav-ctas .btn-signin {
+    display: none !important;
+  }
+  
+  .mobile-menu-cta {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+  }
+  
+  .mobile-menu-cta .btn-primary-pill {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 20px;
+  }
+  
+  .mobile-menu-cta .btn-signin {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 20px;
+    font-size: 14px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    display: inline-flex;
   }
   
   .mobile-toggle {
     display: block;
   }
   
+  .mobile-toggle i {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Section Padding Adjustments */
+  .hero {
+    padding-top: 100px;
+    padding-bottom: 40px;
+  }
+
+  .features-section,
+  .playground-section,
+  .pricing-section {
+    padding: 60px 0;
+  }
+  
+  /* Hero Typography & Rhythm */
   .hero h1 {
-    font-size: 40px;
+    font-size: 32px;
+    line-height: 1.2;
+    height: auto;
     letter-spacing: -1px;
   }
   
-  .hero p.subtitle {
-    font-size: 16px;
+  .hero p.subtitle,
+  .hero .subtitle {
+    font-size: 15px;
+    margin-bottom: 24px;
   }
   
+  /* Optimize Touch Targets and Width */
   .hero-ctas {
     flex-direction: column;
     align-items: stretch;
-    padding: 0 20px;
+    padding: 0;
+    gap: 12px;
+    height: auto;
   }
   
-  .hero-ctas a {
+  .hero-ctas a,
+  .btn-large {
+    padding: 12px 20px;
     width: 100%;
     justify-content: center;
+  }
+
+  /* Grid and Mockup Stacking */
+  .bento-grid, 
+  .pricing-grid, 
+  .mockup-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .bento-card.col-2 {
+    grid-column: span 1;
+  }
+
+  .mockup-container {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .mockup-grid {
+    min-height: auto;
+  }
+
+  .video-feed img {
+    min-height: 200px;
   }
 }
